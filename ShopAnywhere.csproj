@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>ShopAnywhere</AssemblyName>
+    <AssemblyName>ShopAnywhere24</AssemblyName>
     <EnableHarmony>true</EnableHarmony>
     <OutputType>Library</OutputType>
   </PropertyGroup>
@@ -25,6 +25,10 @@
     <Reference Include="0Harmony">
       <HintPath>/root/sdv_mods/ModRef/0Harmony.dll</HintPath>
     </Reference>
-  </ItemGroup>
 
+    <Reference Include="SMAPI.Toolkit.CoreInterfaces">
+      <HintPath>/root/sdv_mods/ModRef/SMAPI.Toolkit.CoreInterfaces.dll</HintPath>
+    </Reference>
+
+  </ItemGroup>
 </Project>
