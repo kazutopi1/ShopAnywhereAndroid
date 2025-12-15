@@ -17,6 +17,7 @@ namespace ShopAnywhere
         private static string lastLocationName;
         private static Vector2 lastTilePos;
         private const int Delay = 50;
+        private const int fastDelay = 17;
         private const string KTShop = "(O)kt.shop";
 
         public override void Entry(IModHelper helper)
@@ -274,6 +275,7 @@ namespace ShopAnywhere
                 Game1.player.FacingDirection,
                 doFade: false
             );
+            Game1.viewportHold = 0;
             Game1.player.viewingLocation.Value = null;
             Game1.displayHUD = true;
             Game1.currentLocation.resetForPlayerEntry();
@@ -293,23 +295,17 @@ namespace ShopAnywhere
         }
         private static void BuildingMenu(string npc)
         {
-            DelayedAction.functionAfterDelay(() =>
-            {
-                lastLocationName = Game1.currentLocation.Name;
-                lastTilePos = Game1.player.Tile;
-                Game1.activeClickableMenu = new StardewValley.Menus.CarpenterMenu(npc);
-            }, Delay);
+            lastLocationName = Game1.currentLocation.NameOrUniqueName;
+            lastTilePos = Game1.player.Tile;
+            Game1.activeClickableMenu = new StardewValley.Menus.CarpenterMenu(npc);
         }
         private static void MarnieMenu()
         {
-            DelayedAction.functionAfterDelay(() =>
-            {
-                var location = Game1.getFarm();
-                lastLocationName = Game1.currentLocation.Name;
-                lastTilePos = Game1.player.Tile;
-                List<StardewValley.Object> stock = Utility.getPurchaseAnimalStock(location);
-                Game1.activeClickableMenu = new StardewValley.Menus.PurchaseAnimalsMenu(stock);
-            }, Delay);
+            var location = Game1.getFarm();
+            lastLocationName = Game1.currentLocation.NameOrUniqueName;
+            lastTilePos = Game1.player.Tile;
+            List<StardewValley.Object> stock = Utility.getPurchaseAnimalStock(location);
+            Game1.activeClickableMenu = new StardewValley.Menus.PurchaseAnimalsMenu(stock);
         }
         private static void KrobusShop()
         {
