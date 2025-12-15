@@ -59,43 +59,7 @@ namespace ShopAnywhere
                 {
                     if (item.QualifiedItemId == KTShop)
                     {
-                        categories = new Response[]
-                        {
-                            new Response("category1", "General Goods"),
-                            new Response("category2", "Combat and Mining"),
-                            new Response("category3", "Building"),
-                            new Response("category4", "Animal Supplies"),
-                            new Response("others", "Others"),
-                            new Response("doNothing", "Close")
-                        };
-                        categoriesOptionsLogic = (Farmer who, string whichAnswer) =>
-                        {
-                            switch (whichAnswer)
-                            {
-                                case "category1":
-                                    DelayedAction.functionAfterDelay(category1, Delay);
-                                    break;
-                                case "category2":
-                                    DelayedAction.functionAfterDelay(category2, Delay);
-                                    break;
-                                case "category3":
-                                    DelayedAction.functionAfterDelay(category3, Delay);
-                                    break;
-                                case "category4":
-                                    DelayedAction.functionAfterDelay(category4, Delay);
-                                    break;
-                                case "others":
-                                    DelayedAction.functionAfterDelay(others, Delay);
-                                    break;
-                            }
-                        };
-                        wasBTapped = false;
-                        Game1.currentLocation.createQuestionDialogue(
-                            question: "Categories",
-                            answerChoices: categories,
-                            afterDialogueBehavior: categoriesOptionsLogic,
-                            speaker: null
-                        );
+                        MainCategory();
                     }
                 }
             }
@@ -121,6 +85,41 @@ namespace ShopAnywhere
         {
             WarpPlayer();
         }
+        private static void MainCategory()
+        {
+            categories = new Response[]
+            {
+                new Response("category1", "General Goods"),
+                new Response("category2", "Combat and Mining"),
+                new Response("category3", "Building"),
+                new Response("category4", "Animal Supplies"),
+                new Response("others", "Others"),
+                new Response("doNothing", "Close")
+            };
+            categoriesOptionsLogic = (Farmer who, string whichAnswer) =>
+            {
+                switch (whichAnswer)
+                {
+                    case "category1":
+                        DelayedAction.functionAfterDelay(category1, Delay);
+                        break;
+                    case "category2":
+                        DelayedAction.functionAfterDelay(category2, Delay);
+                        break;
+                    case "category3":
+                        DelayedAction.functionAfterDelay(category3, Delay);
+                        break;
+                    case "category4":
+                        DelayedAction.functionAfterDelay(category4, Delay);
+                        break;
+                    case "others":
+                        DelayedAction.functionAfterDelay(others, Delay);
+                        break;
+                }
+            };
+            wasBTapped = false;
+            QuestionDialogue("Categories", categories, categoriesOptionsLogic);
+        }
         private static void category1()
         {
             Response[] cat1 = new Response[]
@@ -144,16 +143,11 @@ namespace ShopAnywhere
                         Utility.TryOpenShopMenu(Game1.shop_saloon, null, false);
                         break;
                     case "return":
-                        MainCategory();
+                        DelayedAction.functionAfterDelay(MainCategory, Delay);
                         break;
                 }
             };
-            Game1.currentLocation.createQuestionDialogue(
-                question: "General Goods",
-                answerChoices: cat1,
-                afterDialogueBehavior: cat1Logic,
-                speaker: null
-            );
+            QuestionDialogue("General Goods", cat1, cat1Logic);
         }
         private static void category2()
         {
@@ -182,16 +176,11 @@ namespace ShopAnywhere
                         DesertTrader();
                         break;
                     case "return2":
-                        MainCategory();
+                        DelayedAction.functionAfterDelay(MainCategory, Delay);
                         break;
                 }
             };
-            Game1.currentLocation.createQuestionDialogue(
-                question: "Combat and Mining",
-                answerChoices: cat2,
-                afterDialogueBehavior: cat2Logic,
-                speaker: null
-            );
+            QuestionDialogue("Combat and Mining", cat2, cat2Logic);
         }
         private static void category3()
         {
@@ -216,16 +205,11 @@ namespace ShopAnywhere
                         BuildingMenu("Wizard");
                         break;
                     case "return3":
-                        MainCategory();
+                        DelayedAction.functionAfterDelay(MainCategory, Delay);
                         break;
                 }
             };
-            Game1.currentLocation.createQuestionDialogue(
-                question: "Building",
-                answerChoices: cat3,
-                afterDialogueBehavior: cat3Logic,
-                speaker: null
-            );
+            QuestionDialogue("Building", cat3, cat3Logic);
         }
         private static void category4()
         {
@@ -246,16 +230,11 @@ namespace ShopAnywhere
                         MarnieMenu();
                         break;
                     case "return4":
-                        MainCategory();
+                        DelayedAction.functionAfterDelay(MainCategory, Delay);
                         break;
                 }
             };
-            Game1.currentLocation.createQuestionDialogue(
-                question: "Animals",
-                answerChoices: cat4,
-                afterDialogueBehavior: cat4Logic,
-                speaker: null
-            );
+            QuestionDialogue("Animals", cat4, cat4Logic);
         }
         private static void others()
         {
@@ -280,28 +259,11 @@ namespace ShopAnywhere
                         KrobusShop();
                         break;
                     case "othReturn":
-                        MainCategory();
+                        DelayedAction.functionAfterDelay(MainCategory, Delay);
                         break;
                 }
             };
-            Game1.currentLocation.createQuestionDialogue(
-                question: "Other Shops",
-                answerChoices: oth,
-                afterDialogueBehavior: othLogic,
-                speaker: null
-            );
-        }
-        private static void MainCategory()
-        {
-            DelayedAction.functionAfterDelay(() =>
-            {
-                Game1.currentLocation.createQuestionDialogue(
-                    question: "Categories",
-                    answerChoices: categories,
-                    afterDialogueBehavior: categoriesOptionsLogic,
-                    speaker: null
-                );
-            }, Delay);
+            QuestionDialogue("Other Shops", oth, othLogic);
         }
         private static void WarpPlayer()
         {
@@ -317,6 +279,17 @@ namespace ShopAnywhere
             Game1.currentLocation.resetForPlayerEntry();
             Game1.player.forceCanMove();
             Game1.exitActiveMenu();
+        }
+        private static void QuestionDialogue(string question,
+            Response[] answerChoices,
+            StardewValley.GameLocation.afterQuestionBehavior afterDialogueBehavior)
+        {
+            Game1.currentLocation.createQuestionDialogue(
+                question: question,
+                answerChoices: answerChoices,
+                afterDialogueBehavior: afterDialogueBehavior,
+                speaker: null
+            );
         }
         private static void BuildingMenu(string npc)
         {
