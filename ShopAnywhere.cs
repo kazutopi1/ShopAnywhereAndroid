@@ -2,6 +2,7 @@ using StardewValley;
 using StardewValley.Menus;
 using StardewValley.Mobile;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using HarmonyLib;
 using Microsoft.Xna.Framework;
 using System;
@@ -17,8 +18,8 @@ namespace ShopAnywhere
         private static string lastLocationName;
         private static Vector2 lastTilePos;
         private const int Delay = 50;
-        private const int fastDelay = 17;
         private const string KTShop = "(O)kt.shop";
+        private static bool warpBack = false;
 
         public override void Entry(IModHelper helper)
         {
@@ -26,30 +27,35 @@ namespace ShopAnywhere
                 return;
 
             var harmony = new Harmony(this.ModManifest.UniqueID);
+            var postfix2 = new HarmonyMethod(typeof(Shop), nameof(Shop.Postfix2));
 
             harmony.Patch(
                 original: AccessTools.PropertyGetter(typeof(VirtualJoypad), nameof(VirtualJoypad.ButtonBPressed)),
                 postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.Postfix))
             );
             harmony.Patch(
+                original: AccessTools.Method(typeof(Game1), nameof(Game1.exitActiveMenu)),
+                postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.FlagReset))
+            );
+            harmony.Patch(
                 original: AccessTools.Method(typeof(CarpenterMenu), nameof(CarpenterMenu.returnToCarpentryMenu)),
-                postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.Postfix2))
+                postfix: postfix2
             );
             harmony.Patch(
                 original: AccessTools.Method(typeof(CarpenterMenu), nameof(CarpenterMenu.returnToCarpentryMenuAfterSuccessfulBuild)),
-                postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.Postfix3))
+                postfix: postfix2
             );
             harmony.Patch(
                 original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.textBoxEnter)),
-                postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.Postfix4))
+                postfix: postfix2
             );
             harmony.Patch(
                 original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnAfterPurchasingAnimal)),
-                postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.Postfix5))
+                postfix: postfix2
             );
             harmony.Patch(
                 original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnToShopMenu)),
-                postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.Postfix6))
+                postfix: postfix2
             );
         }
         private static void Postfix(ref bool __result)
@@ -70,21 +76,9 @@ namespace ShopAnywhere
         {
             WarpPlayer();
         }
-        private static void Postfix3()
+        private static void FlagReset()
         {
-            WarpPlayer();
-        }
-        private static void Postfix4()
-        {
-            WarpPlayer();
-        }
-        private static void Postfix5()
-        {
-            WarpPlayer();
-        }
-        private static void Postfix6()
-        {
-            WarpPlayer();
+            warpBack = false;
         }
         private static void MainCategory()
         {
@@ -157,6 +151,7 @@ namespace ShopAnywhere
                 new Response("adventureShop", "Adventurer's Guild Shop"),
                 new Response("blacksmith", "Clint's Shop"),
                 new Response("toolUpgrades", "Tool Upgrades"),
+                new Response("crushGeodes", "Crush Geodes"),
                 new Response("desertTrader", "Desert Trader"),
                 new Response("return2", "Return")
             };
@@ -173,6 +168,9 @@ namespace ShopAnywhere
                     case "toolUpgrades":
                         Utility.TryOpenShopMenu(Game1.shop_blacksmithUpgrades, null, false);
                         break;
+                    case "crushGeodes":
+                        CrushGeodeMenu();
+                        break;
                     case "desertTrader":
                         DesertTrader();
                         break;
@@ -188,8 +186,8 @@ namespace ShopAnywhere
             Response[] cat3 = new Response[]
             {
                 new Response("carpenter", "Robin's Shop"),
-                new Response("buildBuildings", "Farm Buildings"),
-                new Response("wizard", "Wizard Buildings"),
+                new Response("buildBuildings", "Construct Farm Buildings"),
+                new Response("wizard", "Construct Wizard Buildings"),
                 new Response("return3", "Return")
             };
             StardewValley.GameLocation.afterQuestionBehavior cat3Logic = (Farmer who, string cat3answers) =>
@@ -203,7 +201,7 @@ namespace ShopAnywhere
                         BuildingMenu("Robin");
                         break;
                     case "wizard":
-                        BuildingMenu("Wizard");
+                        WizardMenu("Wizard");
                         break;
                     case "return3":
                         DelayedAction.functionAfterDelay(MainCategory, Delay);
@@ -217,7 +215,8 @@ namespace ShopAnywhere
             Response[] cat4 = new Response[]
             {
                 new Response("supplies", "Marnie's Shop"),
-                new Response("animalShop", "Buy Animals"),
+                new Response("animalShop", "Purchase Animals"),
+                new Response("adoptPet", "Adopt Pets"),
                 new Response("return4", "Return")
             };
             StardewValley.GameLocation.afterQuestionBehavior cat4Logic = (Farmer who, string cat4Answers) =>
@@ -229,6 +228,9 @@ namespace ShopAnywhere
                         break;
                     case "animalShop":
                         MarnieMenu();
+                        break;
+                    case "adoptPet":
+                        Utility.TryOpenShopMenu(Game1.shop_petAdoption, null, false);
                         break;
                     case "return4":
                         DelayedAction.functionAfterDelay(MainCategory, Delay);
@@ -268,6 +270,11 @@ namespace ShopAnywhere
         }
         private static void WarpPlayer()
         {
+            if (!warpBack)
+            {
+                return;
+            }
+            warpBack = false;
             Game1.warpFarmer(
                 lastLocationName,
                 (int)lastTilePos.X,
@@ -295,12 +302,14 @@ namespace ShopAnywhere
         }
         private static void BuildingMenu(string npc)
         {
+            warpBack = true;
             lastLocationName = Game1.currentLocation.NameOrUniqueName;
             lastTilePos = Game1.player.Tile;
             Game1.activeClickableMenu = new StardewValley.Menus.CarpenterMenu(npc);
         }
         private static void MarnieMenu()
         {
+            warpBack = true;
             var location = Game1.getFarm();
             lastLocationName = Game1.currentLocation.NameOrUniqueName;
             lastTilePos = Game1.player.Tile;
@@ -330,6 +339,21 @@ namespace ShopAnywhere
                 Utility.TryOpenShopMenu(Game1.shop_dwarf, null, false);
             }
             else { Game1.drawObjectDialogue("Reach Combat level 5 to access this shop."); }
+        }
+        private static void WizardMenu(string npc)
+        {
+            if (Game1.player.hasMagicInk)
+            {
+                warpBack = true;
+                lastLocationName = Game1.currentLocation.NameOrUniqueName;
+                lastTilePos = Game1.player.Tile;
+                Game1.activeClickableMenu = new StardewValley.Menus.CarpenterMenu(npc);
+            }
+            else { Game1.drawObjectDialogue("Return the Magic Ink to the Wizard to access this shop."); }
+        }
+        private static void CrushGeodeMenu()
+        {
+            Game1.activeClickableMenu = new StardewValley.Menus.GeodeMenu();
         }
     }
 }
