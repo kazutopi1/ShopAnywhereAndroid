@@ -14,6 +14,16 @@ namespace ShopAnywhere
     {
         private static Response[] categories;
         private static StardewValley.GameLocation.afterQuestionBehavior categoriesOptionsLogic;
+        private static Response[] cat1;
+        private static StardewValley.GameLocation.afterQuestionBehavior cat1Logic;
+        private static Response[] cat2;
+        private static StardewValley.GameLocation.afterQuestionBehavior cat2Logic;
+        private static Response[] cat3;
+        private static StardewValley.GameLocation.afterQuestionBehavior cat3Logic;
+        private static Response[] cat4;
+        private static StardewValley.GameLocation.afterQuestionBehavior cat4Logic;
+        private static Response[] oth;
+        private static StardewValley.GameLocation.afterQuestionBehavior othLogic;
         private static bool wasBTapped = false;
         private static string lastLocationName;
         private static Vector2 lastTilePos;
@@ -57,30 +67,11 @@ namespace ShopAnywhere
                 original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnToShopMenu)),
                 postfix: postfix2
             );
+            helper.Events.Input.ButtonPressed += Key;
+            helper.Events.GameLoop.ReturnedToTitle += CleanUp;
+            helper.Events.GameLoop.GameLaunched += QuestionDialogueCache;
         }
-        private static void Postfix(ref bool __result)
-        {
-            if (Context.IsPlayerFree && !wasBTapped && __result)
-            {
-                if (Game1.player.CurrentItem is StardewValley.Item item)
-                {
-                    if (item.QualifiedItemId == KTShop)
-                    {
-                        MainCategory();
-                    }
-                }
-            }
-            wasBTapped = __result;
-        }
-        private static void Postfix2()
-        {
-            WarpPlayer();
-        }
-        private static void FlagReset()
-        {
-            warpBack = false;
-        }
-        private static void MainCategory()
+        private void QuestionDialogueCache(object sender, GameLaunchedEventArgs e)
         {
             categories = new Response[]
             {
@@ -112,19 +103,15 @@ namespace ShopAnywhere
                         break;
                 }
             };
-            wasBTapped = false;
-            QuestionDialogue("Categories", categories, categoriesOptionsLogic);
-        }
-        private static void category1()
-        {
-            Response[] cat1 = new Response[]
+            cat1 = new Response[]
             {
                 new Response("seedShop", "Pierre's General Store"),
                 new Response("fishShop", "Willy's Shop"),
                 new Response("saloon", "Saloon"),
+                new Response("sandyShop", "Oasis"),
                 new Response("return", "Return")
             };
-            StardewValley.GameLocation.afterQuestionBehavior cat1Logic = (Farmer who, string cat1answers) =>
+            cat1Logic = (Farmer who, string cat1answers) =>
             {
                 switch (cat1answers)
                 {
@@ -137,16 +124,15 @@ namespace ShopAnywhere
                     case "saloon":
                         Utility.TryOpenShopMenu(Game1.shop_saloon, null, false);
                         break;
+                    case "sandyShop":
+                        SandyShop();
+                        break;
                     case "return":
                         DelayedAction.functionAfterDelay(MainCategory, Delay);
                         break;
                 }
             };
-            QuestionDialogue("General Goods", cat1, cat1Logic);
-        }
-        private static void category2()
-        {
-            Response[] cat2 = new Response[]
+            cat2 = new Response[]
             {
                 new Response("adventureShop", "Adventurer's Guild Shop"),
                 new Response("blacksmith", "Clint's Shop"),
@@ -155,7 +141,7 @@ namespace ShopAnywhere
                 new Response("desertTrader", "Desert Trader"),
                 new Response("return2", "Return")
             };
-            StardewValley.GameLocation.afterQuestionBehavior cat2Logic = (Farmer who, string cat2answers) =>
+            cat2Logic = (Farmer who, string cat2answers) =>
             {
                 switch (cat2answers)
                 {
@@ -179,18 +165,14 @@ namespace ShopAnywhere
                         break;
                 }
             };
-            QuestionDialogue("Combat and Mining", cat2, cat2Logic);
-        }
-        private static void category3()
-        {
-            Response[] cat3 = new Response[]
+            cat3 = new Response[]
             {
                 new Response("carpenter", "Robin's Shop"),
                 new Response("buildBuildings", "Construct Farm Buildings"),
                 new Response("wizard", "Construct Wizard Buildings"),
                 new Response("return3", "Return")
             };
-            StardewValley.GameLocation.afterQuestionBehavior cat3Logic = (Farmer who, string cat3answers) =>
+            cat3Logic = (Farmer who, string cat3answers) =>
             {
                 switch (cat3answers)
                 {
@@ -208,18 +190,14 @@ namespace ShopAnywhere
                         break;
                 }
             };
-            QuestionDialogue("Building", cat3, cat3Logic);
-        }
-        private static void category4()
-        {
-            Response[] cat4 = new Response[]
+            cat4 = new Response[]
             {
                 new Response("supplies", "Marnie's Shop"),
                 new Response("animalShop", "Purchase Animals"),
                 new Response("adoptPet", "Adopt Pets"),
                 new Response("return4", "Return")
             };
-            StardewValley.GameLocation.afterQuestionBehavior cat4Logic = (Farmer who, string cat4Answers) =>
+            cat4Logic = (Farmer who, string cat4Answers) =>
             {
                 switch (cat4Answers)
                 {
@@ -237,18 +215,14 @@ namespace ShopAnywhere
                         break;
                 }
             };
-            QuestionDialogue("Animals", cat4, cat4Logic);
-        }
-        private static void others()
-        {
-            Response[] oth = new Response[]
+            oth = new Response[]
             {
                 new Response("wanderingTrader", "Traveling Cart"),
                 new Response("dwarf", "Dwarf's Shop"),
                 new Response("krobus", "Krobus's Shop"),
                 new Response("othReturn", "Return")
             };
-            StardewValley.GameLocation.afterQuestionBehavior othLogic = (Farmer who, string othAnswers) =>
+            othLogic = (Farmer who, string othAnswers) =>
             {
                 switch (othAnswers)
                 {
@@ -266,6 +240,80 @@ namespace ShopAnywhere
                         break;
                 }
             };
+        }
+        private void CleanUp(object sender, ReturnedToTitleEventArgs e)
+        {
+            warpBack = false;
+            lastLocationName = null;
+            wasBTapped = false;
+            categories = null;
+            categoriesOptionsLogic = null;
+            cat1 = null;
+            cat1Logic = null;
+            cat2 = null;
+            cat2Logic = null;
+            cat3 = null;
+            cat3Logic = null;
+            cat4 = null;
+            cat4Logic = null;
+            oth = null;
+            othLogic = null;
+        }
+        private void Key(object sender, ButtonPressedEventArgs e)
+        {
+            if (e.Button == SButton.F1 && Context.IsPlayerFree && Context.IsWorldReady)
+            {
+                if (Helper.Input.IsDown(SButton.LeftShift) && Helper.Input.IsDown(SButton.LeftControl))
+                {
+                    MainCategory();
+                }
+            }
+        }
+        private static void Postfix(ref bool __result)
+        {
+            if (Context.IsPlayerFree && !wasBTapped && __result)
+            {
+                if (Game1.player.CurrentItem is StardewValley.Item item)
+                {
+                    if (item.QualifiedItemId == KTShop)
+                    {
+                        MainCategory();
+                    }
+                }
+            }
+            wasBTapped = __result;
+        }
+        private static void Postfix2()
+        {
+            WarpPlayer();
+        }
+        private static void FlagReset()
+        {
+            warpBack = false;
+        }
+        private static void MainCategory()
+        {
+            wasBTapped = false;
+            QuestionDialogue("Categories", categories, categoriesOptionsLogic);
+        }
+        private static void category1()
+        {
+            QuestionDialogue("General Goods", cat1, cat1Logic);
+        }
+        private static void category2()
+        {
+            QuestionDialogue("Combat and Mining", cat2, cat2Logic);
+        }
+        private static void category3()
+        {
+            QuestionDialogue("Building", cat3, cat3Logic);
+        }
+        private static void category4()
+        {
+            QuestionDialogue("Animals", cat4, cat4Logic);
+        }
+        private static void others()
+        {
             QuestionDialogue("Other Shops", oth, othLogic);
         }
         private static void WarpPlayer()
@@ -334,11 +382,19 @@ namespace ShopAnywhere
         }
         private static void DwarfShop()
         {
-            if (Game1.player.professions.Contains(Farmer.scout) || Game1.player.professions.Contains(Farmer.fighter))
+            if (Game1.player.canUnderstandDwarves)
             {
                 Utility.TryOpenShopMenu(Game1.shop_dwarf, null, false);
             }
-            else { Game1.drawObjectDialogue("Reach Combat level 5 to access this shop."); }
+            else { Game1.drawObjectDialogue("Donate all 4 Dwarf Scrolls to access this shop."); }
+        }
+        private static void SandyShop()
+        {
+            if (Game1.player.hasOrWillReceiveMail("ccVault") || Game1.player.hasOrWillReceiveMail("JojaVault"))
+            {
+                Utility.TryOpenShopMenu(Game1.shop_sandy, null, false);
+            }
+            else { Game1.drawObjectDialogue("Fix the Bus first to access this Shop."); }
         }
         private static void WizardMenu(string npc)
         {
