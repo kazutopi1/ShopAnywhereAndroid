@@ -246,18 +246,7 @@ namespace ShopAnywhere
             warpBack = false;
             lastLocationName = null;
             wasBTapped = false;
-            categories = null;
-            categoriesOptionsLogic = null;
-            cat1 = null;
-            cat1Logic = null;
-            cat2 = null;
-            cat2Logic = null;
-            cat3 = null;
-            cat3Logic = null;
-            cat4 = null;
-            cat4Logic = null;
-            oth = null;
-            othLogic = null;
+            lastTilePos = Vector2.Zero;
         }
         private void Key(object sender, ButtonPressedEventArgs e)
         {
