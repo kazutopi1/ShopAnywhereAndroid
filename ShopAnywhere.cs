@@ -37,35 +37,21 @@ namespace ShopAnywhere
                 return;
 
             var harmony = new Harmony(this.ModManifest.UniqueID);
-            var postfix2 = new HarmonyMethod(typeof(Shop), nameof(Shop.Postfix2));
 
             harmony.Patch(
                 original: AccessTools.PropertyGetter(typeof(VirtualJoypad), nameof(VirtualJoypad.ButtonBPressed)),
-                postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.Postfix))
+                postfix: new HarmonyMethod(typeof(Shop), nameof(Postfix))
+            );
+            harmony.Patch(
+                original: AccessTools.Method(typeof(Game1), nameof(Game1.warpFarmer), new[]
+                {
+                    typeof(LocationRequest), typeof(int), typeof(int), typeof(int), typeof(bool)
+                }),
+                postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.WarpPlayer))
             );
             harmony.Patch(
                 original: AccessTools.Method(typeof(Game1), nameof(Game1.exitActiveMenu)),
-                postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.FlagReset))
-            );
-            harmony.Patch(
-                original: AccessTools.Method(typeof(CarpenterMenu), nameof(CarpenterMenu.returnToCarpentryMenu)),
-                postfix: postfix2
-            );
-            harmony.Patch(
-                original: AccessTools.Method(typeof(CarpenterMenu), nameof(CarpenterMenu.returnToCarpentryMenuAfterSuccessfulBuild)),
-                postfix: postfix2
-            );
-            harmony.Patch(
-                original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.textBoxEnter)),
-                postfix: postfix2
-            );
-            harmony.Patch(
-                original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnAfterPurchasingAnimal)),
-                postfix: postfix2
-            );
-            harmony.Patch(
-                original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnToShopMenu)),
-                postfix: postfix2
+                postfix: new HarmonyMethod(typeof(Shop), nameof(FlagReset))
             );
             helper.Events.Input.ButtonPressed += Key;
             helper.Events.GameLoop.ReturnedToTitle += CleanUp;
@@ -272,39 +258,14 @@ namespace ShopAnywhere
             }
             wasBTapped = __result;
         }
-        private static void Postfix2()
-        {
-            WarpPlayer();
-        }
-        private static void FlagReset()
-        {
-            warpBack = false;
-        }
-        private static void MainCategory()
-        {
-            wasBTapped = false;
-            QuestionDialogue("Categories", categories, categoriesOptionsLogic);
-        }
-        private static void category1()
-        {
-            QuestionDialogue("General Goods", cat1, cat1Logic);
-        }
-        private static void category2()
-        {
-            QuestionDialogue("Combat and Mining", cat2, cat2Logic);
-        }
-        private static void category3()
-        {
-            QuestionDialogue("Building", cat3, cat3Logic);
-        }
-        private static void category4()
-        {
-            QuestionDialogue("Animals", cat4, cat4Logic);
-        }
-        private static void others()
-        {
-            QuestionDialogue("Other Shops", oth, othLogic);
-        }
+        private static void FlagReset() { warpBack = false; }
+        private static void MainCategory() { wasBTapped = false; QuestionDialogue("Categories", categories, categoriesOptionsLogic); }
+        private static void category1() { QuestionDialogue("General Goods", cat1, cat1Logic); }
+        private static void category2() { QuestionDialogue("Combat and Mining", cat2, cat2Logic); }
+        private static void category3() { QuestionDialogue("Building", cat3, cat3Logic); }
+        private static void category4() { QuestionDialogue("Animals", cat4, cat4Logic); }
+        private static void others() { QuestionDialogue("Other Shops", oth, othLogic); }
+
         private static void WarpPlayer()
         {
             if (!warpBack)
@@ -326,9 +287,11 @@ namespace ShopAnywhere
             Game1.player.forceCanMove();
             Game1.exitActiveMenu();
         }
-        private static void QuestionDialogue(string question,
+        private static void QuestionDialogue(
+            string question,
             Response[] answerChoices,
-            StardewValley.GameLocation.afterQuestionBehavior afterDialogueBehavior)
+            StardewValley.GameLocation.afterQuestionBehavior afterDialogueBehavior
+        )
         {
             Game1.currentLocation.createQuestionDialogue(
                 question: question,
