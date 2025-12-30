@@ -7,19 +7,19 @@ using HarmonyLib;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using ShopAnywhere;
 
 namespace ShopAnywhere
 {
     public class Shop : Mod
     {
+        private static IMonitor M;
         public static Shop SA;
         private Response[] categories, cat1, cat2, cat3, cat4, oth;
         private StardewValley.GameLocation.afterQuestionBehavior categoriesOptionsLogic, cat1Logic, cat2Logic, cat3Logic, cat4Logic, othLogic;
         private bool wasBTapped = false;
         private string lastLocationName;
         private Vector2 lastTilePos;
-        private bool warpBack = false;
+        private bool canSkip = false;
         private const int Delay = 50;
         private const string KTShop = "(O)kt.shop";
         private Harmony harmony;
@@ -27,23 +27,42 @@ namespace ShopAnywhere
         public override void Entry(IModHelper helper)
         {
             SA = this;
+            M = this.Monitor;
 
             if (Constants.TargetPlatform != GamePlatform.Android)
                 return;
 
             harmony = new Harmony(ModManifest.UniqueID);
+            var prefix = new HarmonyMethod(typeof(Shop), nameof(Shop.Skip));
 
             harmony.Patch(
                 original: AccessTools.PropertyGetter(typeof(VirtualJoypad), nameof(VirtualJoypad.ButtonBPressed)),
                 postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.OpenMain))
             );
-            harmony.Patch(
-                original: AccessTools.Method(typeof(Game1), nameof(Game1.warpFarmer), new[]
-                {
-                    typeof(LocationRequest), typeof(int), typeof(int), typeof(int), typeof(bool)
-                }),
-                postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.WarpPlayer))
-            );
+
+            try
+            {
+                harmony.Patch(
+                    original: AccessTools.Method(typeof(CarpenterMenu), nameof(CarpenterMenu.returnToCarpentryMenu)),
+                    prefix: prefix
+                );
+                harmony.Patch(
+                    original: AccessTools.Method(typeof(CarpenterMenu), nameof(CarpenterMenu.returnToCarpentryMenuAfterSuccessfulBuild)),
+                    prefix: prefix
+                );
+                harmony.Patch(
+                    original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnAfterPurchasingAnimal)),
+                    prefix: prefix
+                );
+                harmony.Patch(
+                    original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnToShopMenu)),
+                    prefix: prefix
+                );
+            }
+            catch (Exception ex)
+            {
+                Monitor.Log($"Patch failed: {ex.Message}");
+            }
             helper.Events.Input.ButtonPressed += Key;
             helper.Events.GameLoop.ReturnedToTitle += CleanUp;
             helper.Events.GameLoop.GameLaunched += QuestionDialogueCache;
@@ -241,7 +260,7 @@ namespace ShopAnywhere
         }
         private void CleanUp(object sender, ReturnedToTitleEventArgs e)
         {
-            warpBack = false;
+            canSkip = false;
             lastLocationName = null;
             wasBTapped = false;
             lastTilePos = Vector2.Zero;
@@ -269,39 +288,47 @@ namespace ShopAnywhere
         }
         private void Save()
         {
-            warpBack = true;
+            canSkip = true;
             lastLocationName = Game1.currentLocation.NameOrUniqueName;
             lastTilePos = Game1.player.Tile;
         }
-        private static void WarpPlayer()
+        private static bool Skip()
         {
-            if (!SA.warpBack)
+            if (!SA.canSkip) { return true; }
+
+            try
             {
-                return;
-            }
-            SA.warpBack = false;
-            Game1.globalFadeToBlack(() =>
-            {
+                SA.canSkip = false;
+                LocationRequest req = Game1.getLocationRequest(SA.lastLocationName);
+                req.OnWarp += delegate
+                {
+                    Game1.exitActiveMenu();
+                    Game1.viewportHold = 0;
+                    Game1.dialogueUp = false;
+                    Game1.viewportFreeze = false;
+                    Game1.player.viewingLocation.Value = null;
+                    Game1.displayFarmer = true;
+                    Game1.displayHUD = true;
+                    Game1.currentLocation.resetForPlayerEntry();
+                    Game1.player.forceCanMove();
+                };
                 Game1.warpFarmer(
-                    SA.lastLocationName,
+                    req,
                     (int)SA.lastTilePos.X,
                     (int)SA.lastTilePos.Y,
-                    Game1.player.FacingDirection,
-                    doFade: false
+                    Game1.player.FacingDirection
                 );
-                Game1.dialogueUp = false;
-                Game1.viewportHold = 0;
-                Game1.player.viewingLocation.Value = null;
-                Game1.displayFarmer = true;
-                Game1.displayHUD = true;
-                Game1.currentLocation.resetForPlayerEntry();
-                Game1.player.forceCanMove();
-                Game1.exitActiveMenu();
-            });
+                return false;
+            }
+            catch (Exception ex)
+            {
+                M.Log($"Failed to skip method: {ex.Message}", LogLevel.Error);
+                return true;
+            }
         }
         private void FlagReset(object sender, MenuChangedEventArgs e)
         {
-            if (e.NewMenu == null && warpBack) { warpBack = false; }
+            if (e.NewMenu == null && canSkip) { canSkip = false; }
         }
         private void BuildingMenu(string npc)
         {
