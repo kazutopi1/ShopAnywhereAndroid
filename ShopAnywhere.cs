@@ -33,13 +33,13 @@ namespace ShopAnywhere
                 return;
 
             harmony = new Harmony(ModManifest.UniqueID);
-            var prefix = new HarmonyMethod(typeof(Shop), nameof(Shop.Skip));
 
             harmony.Patch(
                 original: AccessTools.PropertyGetter(typeof(VirtualJoypad), nameof(VirtualJoypad.ButtonBPressed)),
                 postfix: new HarmonyMethod(typeof(Shop), nameof(Shop.OpenMain))
             );
 
+            var prefix = new HarmonyMethod(typeof(Shop), nameof(Shop.Skip));
             try
             {
                 harmony.Patch(
@@ -277,14 +277,21 @@ namespace ShopAnywhere
         }
         private static void OpenMain(ref bool __result)
         {
-            if (Context.IsPlayerFree && !SA.wasBTapped && __result)
+            try
             {
-                if (Game1.player.CurrentItem?.QualifiedItemId == KTShop)
+                if (Context.IsPlayerFree && !SA.wasBTapped && __result)
                 {
-                    SA.MainCategory();
+                    if (Game1.player.CurrentItem?.QualifiedItemId == KTShop)
+                    {
+                        SA.MainCategory();
+                    }
                 }
+                SA.wasBTapped = __result;
             }
-            SA.wasBTapped = __result;
+            catch (Exception ex)
+            {
+                M.Log($"{ex.Message}");
+            }
         }
         private void Save()
         {
@@ -333,21 +340,19 @@ namespace ShopAnywhere
         private void BuildingMenu(string npc)
         {
             Save();
-            Game1.activeClickableMenu = new StardewValley.Menus.CarpenterMenu(npc);
+            Game1.currentLocation.ShowConstructOptions(npc);
         }
         private void MarnieMenu()
         {
             Save();
-            var location = Game1.getFarm();
-            List<StardewValley.Object> stock = Utility.getPurchaseAnimalStock(location);
-            Game1.activeClickableMenu = new StardewValley.Menus.PurchaseAnimalsMenu(stock);
+            Game1.currentLocation.ShowAnimalShopMenu();
         }
         private void WizardMenu(string npc)
         {
             if (Game1.player.hasMagicInk)
             {
                 Save();
-                Game1.activeClickableMenu = new StardewValley.Menus.CarpenterMenu(npc);
+                Game1.currentLocation.ShowConstructOptions(npc);
             }
             else { Game1.drawObjectDialogue("Return the Magic Ink to the Wizard to access this shop."); }
         }
