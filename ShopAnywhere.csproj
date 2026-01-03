@@ -3,28 +3,36 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <AssemblyName>ShopAnywhere</AssemblyName>
     <EnableHarmony>true</EnableHarmony>
     <OutputType>Library</OutputType>
-    <NoWarn>$(NoWarn);CA1416;CS8618;CS8622;CS8625</NoWarn>
+    <EnableGamePathProbing>false</EnableGamePathProbing>
+    <GamePath>/root/sdv_mods/StardewAssemblies</GamePath>
+
+    <NoWarn>$(NoWarn);CA1416;CS8618;CS8622;CS8625;CS8600;CS8604</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="StardewValley">
-      <HintPath>/root/sdv_mods/ModRef/StardewValley.dll</HintPath>
+    <Reference Include="Stardew Valley">
+      <HintPath>$(GamePath)/Stardew Valley.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="StardewModdingAPI">
-      <HintPath>/root/sdv_mods/ModRef/StardewModdingAPI.dll</HintPath>
-    </Reference>
-    <Reference Include="MonoGame.Framework">
-      <HintPath>/root/sdv_mods/ModRef/MonoGame.Framework.dll</HintPath>
+      <HintPath>$(GamePath)/StardewModdingAPI.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="0Harmony">
-      <HintPath>/root/sdv_mods/ModRef/0Harmony.dll</HintPath>
+      <HintPath>$(GamePath)/0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MonoGame.Framework">
+      <HintPath>$(GamePath)/MonoGame.Framework.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="SMAPI.Toolkit.CoreInterfaces">
-      <HintPath>/root/sdv_mods/ModRef/SMAPI.Toolkit.CoreInterfaces.dll</HintPath>
+      <HintPath>$(GamePath)/SMAPI.Toolkit.CoreInterfaces.dll</HintPath>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
 
