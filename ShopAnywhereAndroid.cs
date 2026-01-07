@@ -14,14 +14,15 @@ namespace ShopAnywhere
     {
         private static IMonitor M;
         public static Shop SA;
-        private Response[] categories, cat1, cat2, cat3, cat4, oth;
-        private StardewValley.GameLocation.afterQuestionBehavior categoriesOptionsLogic, cat1Logic, cat2Logic, cat3Logic, cat4Logic, othLogic;
+        private Response[] categories, general, combatAndMining, building, animals, oth;
+        private StardewValley.GameLocation.afterQuestionBehavior categoriesOptionsLogic, generalLogic, combatAndMiningLogic, buildingLogic, animalsLogic, othLogic;
         private bool wasBTapped = false;
         private string lastLocationName;
         private Vector2? lastTilePos;
         private bool canSkip = false;
         private const int Delay = 50;
         private const string KTShop = "(O)kt.shop";
+        private Config config;
 
         public override void Entry(IModHelper helper)
         {
@@ -29,7 +30,11 @@ namespace ShopAnywhere
             M = this.Monitor;
 
             if (Constants.TargetPlatform != GamePlatform.Android)
+            {
+                var ex = new Exception();
+                Monitor.Log($"This mod only supports Android. {ex.ToString()}", LogLevel.Error);
                 return;
+            }
 
             var harmony = new Harmony(ModManifest.UniqueID);
 
@@ -84,119 +89,181 @@ namespace ShopAnywhere
             {
                 Monitor.Log($"Failed to patch Callback methods: {ex.ToString()}", LogLevel.Error);
             }
-            helper.Events.Input.ButtonPressed += OpenMain_Key;
+
+            this.config = helper.ReadConfig<Config>();
+
+            if (config.EnableKeybind)
+            {
+                helper.Events.Input.ButtonPressed += OpenMain_Key;
+                Monitor.Log($"Keybind set to {config.Keybind}", LogLevel.Trace);
+            }
+
             helper.Events.GameLoop.GameLaunched += QuestionDialogueCache;
             helper.Events.Display.MenuChanged += FlagReset;
         }
-        private void MainCategory() { wasBTapped = false; QuestionDialogue("Categories", categories, categoriesOptionsLogic); }
-        private void category1() { QuestionDialogue("General Goods", cat1, cat1Logic); }
-        private void category2() { QuestionDialogue("Combat and Mining", cat2, cat2Logic); }
-        private void category3() { QuestionDialogue("Building", cat3, cat3Logic); }
-        private void category4() { QuestionDialogue("Animals", cat4, cat4Logic); }
-        private void others() { QuestionDialogue("Other Shops", oth, othLogic); }
-
+        private void QuestionDialogue(
+            string question,
+            Response[] answerChoices,
+            StardewValley.GameLocation.afterQuestionBehavior afterDialogueBehavior
+        )
+        {
+            Game1.currentLocation.createQuestionDialogue(
+                question: question,
+                answerChoices: answerChoices,
+                afterDialogueBehavior: afterDialogueBehavior
+            );
+        }
+        private void Categories()
+        {
+            wasBTapped = false;
+            QuestionDialogue(
+                Helper.Translation.Get("option.categories"),
+                categories,
+                categoriesOptionsLogic
+            );
+        }
+        private void General()
+        {
+            QuestionDialogue(
+                Helper.Translation.Get("option.general"),
+                general,
+                generalLogic
+            );
+        }
+        private void CombatAndMining()
+        {
+            QuestionDialogue(
+                Helper.Translation.Get("option.combat"),
+                combatAndMining,
+                combatAndMiningLogic
+            );
+        }
+        private void Building()
+        {
+            QuestionDialogue(
+                Helper.Translation.Get("option.building"),
+                building,
+                buildingLogic
+            );
+        }
+        private void Animals()
+        {
+            QuestionDialogue(
+                Helper.Translation.Get("option.animals"),
+                animals,
+                animalsLogic
+            );
+        }
+        private void Others()
+        {
+            QuestionDialogue(
+                Helper.Translation.Get("option.others"),
+                oth,
+                othLogic
+            );
+        }
         private void QuestionDialogueCache(object sender, GameLaunchedEventArgs e)
         {
             categories = new Response[]
             {
-                new Response("category1", "General Goods"),
-                new Response("category2", "Combat and Mining"),
-                new Response("category3", "Building"),
-                new Response("category4", "Animal Supplies"),
-                new Response("others", "Others"),
-                new Response("doNothing", "Close")
+                new Response("General", Helper.Translation.Get("option.general")),
+                new Response("CombatAndMining", Helper.Translation.Get("option.combat")),
+                new Response("Building", Helper.Translation.Get("option.building")),
+                new Response("Animals", Helper.Translation.Get("option.animals")),
+                new Response("Others", Helper.Translation.Get("option.others")),
+                new Response("doNothing", Helper.Translation.Get("option.close"))
             };
             categoriesOptionsLogic = (Farmer who, string whichAnswer) =>
             {
                 switch (whichAnswer)
                 {
-                    case "category1": DelayedAction.functionAfterDelay(category1, Delay); break;
-                    case "category2": DelayedAction.functionAfterDelay(category2, Delay); break;
-                    case "category3": DelayedAction.functionAfterDelay(category3, Delay); break;
-                    case "category4": DelayedAction.functionAfterDelay(category4, Delay); break;
-                    case "others": DelayedAction.functionAfterDelay(others, Delay); break;
+                    case "General": DelayedAction.functionAfterDelay(General, Delay); break;
+                    case "CombatAndMining": DelayedAction.functionAfterDelay(CombatAndMining, Delay); break;
+                    case "Building": DelayedAction.functionAfterDelay(Building, Delay); break;
+                    case "Animals": DelayedAction.functionAfterDelay(Animals, Delay); break;
+                    case "Others": DelayedAction.functionAfterDelay(Others, Delay); break;
                 }
             };
-            cat1 = new Response[]
+            general = new Response[]
             {
-                new Response("seedShop", "Pierre's General Store"),
-                new Response("fishShop", "Willy's Shop"),
-                new Response("saloon", "Saloon"),
-                new Response("sandyShop", "Oasis"),
-                new Response("return", "Return")
+                new Response("seedShop", Helper.Translation.Get("shop.pierre")),
+                new Response("fishShop", Helper.Translation.Get("shop.willy")),
+                new Response("saloon", Helper.Translation.Get("shop.saloon")),
+                new Response("sandyShop", Helper.Translation.Get("shop.oasis")),
+                new Response("return", Helper.Translation.Get("option.return"))
             };
-            cat1Logic = (Farmer who, string cat1answers) =>
+            generalLogic = (Farmer who, string generalanswers) =>
             {
-                switch (cat1answers)
+                switch (generalanswers)
                 {
                     case "seedShop": Utility.TryOpenShopMenu(Game1.shop_generalStore, null, false); break;
                     case "fishShop": Utility.TryOpenShopMenu(Game1.shop_fish, null, false); break;
                     case "saloon": Utility.TryOpenShopMenu(Game1.shop_saloon, null, false); break;
                     case "sandyShop": SandyShop(); break;
-                    case "return": DelayedAction.functionAfterDelay(MainCategory, Delay); break;
+                    case "return": DelayedAction.functionAfterDelay(Categories, Delay); break;
                 }
             };
-            cat2 = new Response[]
+            combatAndMining = new Response[]
             {
-                new Response("adventureShop", "Adventurer's Guild Shop"),
-                new Response("blacksmith", "Clint's Shop"),
-                new Response("toolUpgrades", "Tool Upgrades"),
-                new Response("crushGeodes", "Crush Geodes"),
-                new Response("desertTrader", "Desert Trader"),
-                new Response("return2", "Return")
+                new Response("adventureShop", Helper.Translation.Get("shop.adventurer")),
+                new Response("blacksmith", Helper.Translation.Get("shop.clint")),
+                new Response("toolUpgrades", Helper.Translation.Get("shop.upgrades")),
+                new Response("crushGeodes", Helper.Translation.Get("shop.geodes")),
+                new Response("desertTrader", Helper.Translation.Get("shop.desertTrader")),
+                new Response("return", Helper.Translation.Get("option.return"))
             };
-            cat2Logic = (Farmer who, string cat2answers) =>
+            combatAndMiningLogic = (Farmer who, string combatAndMininganswers) =>
             {
-                switch (cat2answers)
+                switch (combatAndMininganswers)
                 {
                     case "adventureShop": Utility.TryOpenShopMenu(Game1.shop_adventurersGuild, null, false); break;
                     case "blacksmith": Utility.TryOpenShopMenu(Game1.shop_blacksmith, null, false); break;
                     case "toolUpgrades": Utility.TryOpenShopMenu(Game1.shop_blacksmithUpgrades, null, false); break;
                     case "crushGeodes": Game1.activeClickableMenu = new StardewValley.Menus.GeodeMenu(); break;
                     case "desertTrader": DesertTrader(); break;
-                    case "return2": DelayedAction.functionAfterDelay(MainCategory, Delay); break;
+                    case "return": DelayedAction.functionAfterDelay(Categories, Delay); break;
                 }
             };
-            cat3 = new Response[]
+            building = new Response[]
             {
-                new Response("carpenter", "Robin's Shop"),
-                new Response("buildBuildings", "Construct Farm Buildings"),
-                new Response("wizard", "Construct Wizard Buildings"),
-                new Response("return3", "Return")
+                new Response("carpenter", Helper.Translation.Get("shop.robin")),
+                new Response("buildBuildings", Helper.Translation.Get("shop.construct")),
+                new Response("wizard", Helper.Translation.Get("shop.wizard")),
+                new Response("return", Helper.Translation.Get("option.return"))
             };
-            cat3Logic = (Farmer who, string cat3answers) =>
+            buildingLogic = (Farmer who, string buildinganswers) =>
             {
-                switch (cat3answers)
+                switch (buildinganswers)
                 {
                     case "carpenter": Utility.TryOpenShopMenu(Game1.shop_carpenter, null, false); break;
                     case "buildBuildings": BuildingMenu("Robin"); break;
                     case "wizard": WizardMenu("Wizard"); break;
-                    case "return3": DelayedAction.functionAfterDelay(MainCategory, Delay); break;
+                    case "return": DelayedAction.functionAfterDelay(Categories, Delay); break;
                 }
             };
-            cat4 = new Response[]
+            animals = new Response[]
             {
-                new Response("supplies", "Marnie's Shop"),
-                new Response("animalShop", "Purchase Animals"),
-                new Response("adoptPet", "Adopt Pets"),
-                new Response("return4", "Return")
+                new Response("supplies", Helper.Translation.Get("shop.marnie")),
+                new Response("animalShop", Helper.Translation.Get("shop.buyAnimals")),
+                new Response("adoptPet", Helper.Translation.Get("shop.pets")),
+                new Response("return", Helper.Translation.Get("option.return"))
             };
-            cat4Logic = (Farmer who, string cat4Answers) =>
+            animalsLogic = (Farmer who, string animalsAnswers) =>
             {
-                switch (cat4Answers)
+                switch (animalsAnswers)
                 {
                     case "supplies": Utility.TryOpenShopMenu(Game1.shop_animalSupplies, null, false); break;
                     case "animalShop": MarnieMenu(); break;
                     case "adoptPet": Utility.TryOpenShopMenu(Game1.shop_petAdoption, null, false); break;
-                    case "return4": DelayedAction.functionAfterDelay(MainCategory, Delay); break;
+                    case "return": DelayedAction.functionAfterDelay(Categories, Delay); break;
                 }
             };
             oth = new Response[]
             {
-                new Response("wanderingTrader", "Traveling Cart"),
-                new Response("dwarf", "Dwarf's Shop"),
-                new Response("krobus", "Krobus's Shop"),
-                new Response("othReturn", "Return")
+                new Response("wanderingTrader", Helper.Translation.Get("shop.travelingCart")),
+                new Response("dwarf", Helper.Translation.Get("shop.dwarf")),
+                new Response("krobus", Helper.Translation.Get("shop.krobus")),
+                new Response("return", Helper.Translation.Get("option.return"))
             };
             othLogic = (Farmer who, string othAnswers) =>
             {
@@ -205,7 +272,7 @@ namespace ShopAnywhere
                     case "wanderingTrader": TravelingCart(); break;
                     case "dwarf": DwarfShop(); break;
                     case "krobus": KrobusShop(); break;
-                    case "othReturn": DelayedAction.functionAfterDelay(MainCategory, Delay); break;
+                    case "return": DelayedAction.functionAfterDelay(Categories, Delay); break;
                 }
             };
         }
@@ -226,7 +293,7 @@ namespace ShopAnywhere
                 SavePosition();
                 Game1.currentLocation.ShowConstructOptions(npc);
             }
-            else { Game1.drawObjectDialogue("Return the Magic Ink to the Wizard to access this shop."); }
+            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.wizard")); }
         }
         private void KrobusShop()
         {
@@ -234,7 +301,7 @@ namespace ShopAnywhere
             {
                 Utility.TryOpenShopMenu(Game1.shop_krobus, null, false);
             }
-            else { Game1.drawObjectDialogue("Acquire the Rusty Key first to access this Shop."); }
+            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.krobus")); }
         }
         private void DesertTrader()
         {
@@ -242,7 +309,7 @@ namespace ShopAnywhere
             {
                 Utility.TryOpenShopMenu(Game1.shop_desertTrader, null, false);
             }
-            else { Game1.drawObjectDialogue("Fix the Bus first to access this Shop."); }
+            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.bus")); }
         }
         private void DwarfShop()
         {
@@ -250,7 +317,7 @@ namespace ShopAnywhere
             {
                 Utility.TryOpenShopMenu(Game1.shop_dwarf, null, false);
             }
-            else { Game1.drawObjectDialogue("Donate all 4 Dwarf Scrolls to access this shop."); }
+            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.dwarf")); }
         }
         private void SandyShop()
         {
@@ -258,7 +325,7 @@ namespace ShopAnywhere
             {
                 Utility.TryOpenShopMenu(Game1.shop_sandy, null, false);
             }
-            else { Game1.drawObjectDialogue("Fix the Bus first to access this Shop."); }
+            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.bus")); }
         }
         private void TravelingCart()
         {
@@ -266,29 +333,13 @@ namespace ShopAnywhere
             {
                 Utility.TryOpenShopMenu(Game1.shop_travelingCart, null, false);
             }
-            else { Game1.drawObjectDialogue("Only available on Fridays and Sundays"); }
-        }
-        private void QuestionDialogue(
-            string question,
-            Response[] answerChoices,
-            StardewValley.GameLocation.afterQuestionBehavior afterDialogueBehavior
-        )
-        {
-            Game1.currentLocation.createQuestionDialogue(
-                question: question,
-                answerChoices: answerChoices,
-                afterDialogueBehavior: afterDialogueBehavior,
-                speaker: null
-            );
+            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.travelingCart")); }
         }
         private void OpenMain_Key(object sender, ButtonPressedEventArgs e)
         {
-            if (e.Button == SButton.F1 && Context.IsPlayerFree && Context.IsWorldReady)
+            if (e.Button == config.Keybind && Context.IsWorldReady && Context.IsPlayerFree)
             {
-                if (Helper.Input.IsDown(SButton.LeftShift) && Helper.Input.IsDown(SButton.LeftControl))
-                {
-                    MainCategory();
-                }
+                Categories();
             }
         }
         public static void OpenMain_ButtonB(ref bool __result)
@@ -299,7 +350,7 @@ namespace ShopAnywhere
                 {
                     if (Game1.player.CurrentItem?.QualifiedItemId == KTShop)
                     {
-                        SA.MainCategory();
+                        SA.Categories();
                     }
                 }
                 SA.wasBTapped = __result;
@@ -325,7 +376,7 @@ namespace ShopAnywhere
                     {
                         if (Game1.player.CurrentItem?.QualifiedItemId == KTShop && Context.IsPlayerFree)
                         {
-                            SA.MainCategory();
+                            SA.Categories();
                         }
                     }
                 }
@@ -340,7 +391,7 @@ namespace ShopAnywhere
             canSkip = true;
             lastLocationName = Game1.currentLocation.NameOrUniqueName;
             lastTilePos = Game1.player.Tile;
-            Monitor.Log($"Position saved: {SA.lastLocationName} {SA.lastTilePos}", LogLevel.Trace);
+            Monitor.Log($"Position saved: {lastLocationName} {lastTilePos}", LogLevel.Trace);
         }
         public static bool SkipCallback(object __instance)
         {
@@ -349,15 +400,11 @@ namespace ShopAnywhere
             try
             {
                 SA.canSkip = false;
-                if (__instance is CarpenterMenu)
+                foreach (GameLocation location in Game1.locations)
                 {
-                    Farm farm = Game1.getLocationFromName("Farm") as Farm;
-                    if (farm != null)
+                    foreach (var building in location.buildings)
                     {
-                        foreach (var building in farm.buildings)
-                        {
-                            building.color = Color.White;
-                        }
+                        building.color = Color.White;
                     }
                 }
                 LocationRequest req = Game1.getLocationRequest(SA.lastLocationName);
@@ -368,11 +415,28 @@ namespace ShopAnywhere
                     Game1.displayHUD = true;
                     Game1.displayFarmer = true;
                     Game1.player.viewingLocation.Value = null;
+
                     if (SA.lastTilePos != null && SA.lastLocationName != null)
                     {
                         SA.lastLocationName = null;
                         SA.lastTilePos = null;
                         M.Log("Saved position cleared", LogLevel.Trace);
+                    }
+
+                    if (__instance is CarpenterMenu carpenter)
+                    {
+                        var reflection = SA.Helper.Reflection;
+                        reflection.GetField<bool>(carpenter, "upgrading").SetValue(false);
+                        reflection.GetField<bool>(carpenter, "demolishing").SetValue(false);
+                        reflection.GetField<bool>(carpenter, "moving").SetValue(false);
+                        reflection.GetField<bool>(carpenter, "painting").SetValue(false);
+                        reflection.GetMethod(carpenter, "resetBounds").Invoke();
+                    }
+
+                    if (__instance is PurchaseAnimalsMenu animal)
+                    {
+                        var reflection = SA.Helper.Reflection;
+                        reflection.GetField<bool>(animal, "freeze").SetValue(false);
                     }
                 };
                 Game1.warpFarmer(
@@ -392,7 +456,15 @@ namespace ShopAnywhere
         }
         private void FlagReset(object sender, MenuChangedEventArgs e)
         {
-            if (e.NewMenu == null && canSkip) { canSkip = false; }
+            if (e.NewMenu == null && canSkip)
+            {
+                canSkip = false;
+            }
         }
+    }
+    internal class Config
+    {
+        public SButton Keybind { get; set; } = SButton.Q;
+        public bool EnableKeybind { get; set; } = false;
     }
 }
