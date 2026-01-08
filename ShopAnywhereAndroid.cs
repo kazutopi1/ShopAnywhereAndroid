@@ -1,4 +1,5 @@
 using StardewValley;
+using StardewValley.Locations;
 using StardewValley.Menus;
 using StardewValley.Mobile;
 using StardewModdingAPI;
@@ -100,6 +101,7 @@ namespace ShopAnywhere
 
             helper.Events.GameLoop.GameLaunched += QuestionDialogueCache;
             helper.Events.Display.MenuChanged += FlagReset;
+            helper.Events.GameLoop.SaveLoaded += CabinDemolishFix;
         }
         private void QuestionDialogue(
             string question,
@@ -392,6 +394,22 @@ namespace ShopAnywhere
             lastLocationName = Game1.currentLocation.NameOrUniqueName;
             lastTilePos = Game1.player.Tile;
             Monitor.Log($"Position saved: {lastLocationName} {lastTilePos}", LogLevel.Trace);
+        }
+        private void CabinDemolishFix(object sender, SaveLoadedEventArgs e)
+        {
+            foreach (GameLocation location in Game1.locations)
+            {
+                foreach (var building in location.buildings)
+                {
+                    if (building.GetIndoors() is Cabin cabin)
+                    {
+                        if (cabin.owner == null)
+                        {
+                            cabin.CreateFarmhand();
+                        }
+                    }
+                }
+            }
         }
         public static bool SkipCallback(object __instance)
         {
