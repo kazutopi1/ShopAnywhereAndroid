@@ -6,8 +6,6 @@
     <Nullable>disable</Nullable>
     <AssemblyName>ShopAnywhereAndroid</AssemblyName>
     <EnableHarmony>true</EnableHarmony>
-    <OutputType>Library</OutputType>
-    <EnableGamePathProbing>false</EnableGamePathProbing>
 
     <NoWarn>$(NoWarn);CA1416;CS8618;CS8622;CS8625;CS8600;CS8604;MSB3277</NoWarn>
   </PropertyGroup>
