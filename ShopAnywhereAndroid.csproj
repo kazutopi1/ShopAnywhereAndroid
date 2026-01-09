@@ -8,13 +8,12 @@
     <EnableHarmony>true</EnableHarmony>
     <OutputType>Library</OutputType>
     <EnableGamePathProbing>false</EnableGamePathProbing>
-    <GamePath>/root/sdv_mods/StardewAssemblies</GamePath>
 
     <NoWarn>$(NoWarn);CA1416;CS8618;CS8622;CS8625;CS8600;CS8604;MSB3277</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="$(GamePath)/*.dll">
+    <Reference Include="/root/sdv_mods/StardewAssemblies/*.dll">
       <Private>false</Private>
     </Reference>
   </ItemGroup>
