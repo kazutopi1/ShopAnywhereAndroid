@@ -1,4 +1,5 @@
 using StardewValley;
+using StardewValley.Buildings;
 using StardewValley.Menus;
 using StardewModdingAPI;
 using HarmonyLib;
@@ -36,11 +37,11 @@ namespace ShopAnywhere
                     original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnToShopMenu)),
                     prefix: skipCallback
                 );
-                Monitor.Log("Callback methods succesfully patched", LogLevel.Trace);
+                Monitor.Log("Methods succesfully patched", LogLevel.Trace);
             }
             catch (Exception ex)
             {
-                Monitor.Log($"Failed to patch Callback methods: {ex.ToString()}", LogLevel.Error);
+                Monitor.Log($"Failed to patch methods: {ex.ToString()}", LogLevel.Error);
             }
         }
         public static bool SkipCallback(object __instance)
@@ -76,10 +77,22 @@ namespace ShopAnywhere
                     if (__instance is CarpenterMenu carpenter)
                     {
                         var reflection = _helper.Reflection;
+                        reflection.GetField<bool>(carpenter, "onFarm").SetValue(false);
                         reflection.GetField<bool>(carpenter, "upgrading").SetValue(false);
                         reflection.GetField<bool>(carpenter, "demolishing").SetValue(false);
                         reflection.GetField<bool>(carpenter, "moving").SetValue(false);
                         reflection.GetField<bool>(carpenter, "painting").SetValue(false);
+                        reflection.GetField<bool>(carpenter, "freeze").SetValue(false);
+                        reflection.GetField<bool>(carpenter, "paintButtonHeld").SetValue(false);
+                        reflection.GetField<bool>(carpenter, "buildButtonHeld").SetValue(false);
+                        reflection.GetField<bool>(carpenter, "moveButtonHeld").SetValue(false);
+                        reflection.GetField<bool>(carpenter, "drawBG").SetValue(true);
+                        reflection.GetField<Building>(carpenter, "buildingToMove").SetValue(null);
+                        if (Game1.options.SnappyMenus)
+                        {
+                            carpenter.populateClickableComponentList();
+                            carpenter.snapToDefaultClickableComponent();
+                        }
                         reflection.GetMethod(carpenter, "resetBounds").Invoke();
                     }
 
@@ -87,6 +100,8 @@ namespace ShopAnywhere
                     {
                         var reflection = _helper.Reflection;
                         reflection.GetField<bool>(animal, "freeze").SetValue(false);
+                        reflection.GetField<bool>(animal, "namingAnimal").SetValue(false);
+                        reflection.GetField<bool>(animal, "onFarm").SetValue(false);
                     }
                 };
 

@@ -192,10 +192,9 @@ namespace ShopAnywhere
         }
         private void OpenMain_Key(object sender, ButtonReleasedEventArgs e)
         {
-            if (!Context.IsWorldReady || !Context.IsPlayerFree || !config.EnableKeybind)
-            {
-                return;
-            }
+            if (!config.EnableKeybind) { return; }
+
+            if (!Context.IsWorldReady || !Context.IsPlayerFree) { return; }
 
             if (e.Button == config.Keybind)
             {
@@ -204,16 +203,15 @@ namespace ShopAnywhere
         }
         public void OnTap(object s, ButtonReleasedEventArgs e)
         {
+            if (!Context.IsPlayerFree || !Context.IsWorldReady) { return; }
+
             if (Game1.player.CurrentItem?.QualifiedItemId == KTShop)
             {
-                if (e.Button == SButton.MouseLeft && Context.IsPlayerFree && Context.IsWorldReady)
+                if (e.Button == SButton.MouseLeft && e.Cursor.Tile == Game1.player.getTileLocation())
                 {
-                    if (e.Cursor.Tile == Game1.player.getTileLocation())
+                    if (Game1.options.weaponControl == 0 || Game1.options.weaponControl == 1)
                     {
-                        if (Game1.options.weaponControl == 0 || Game1.options.weaponControl == 1)
-                        {
-                            Shop.Categories();
-                        }
+                        Shop.Categories();
                     }
                 }
             }
