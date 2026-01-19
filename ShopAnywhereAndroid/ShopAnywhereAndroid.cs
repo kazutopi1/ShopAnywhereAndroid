@@ -108,6 +108,11 @@ namespace ShopAnywhere
         }
         public void BuildingMenu(string npc)
         {
+            if (!config.AllowMultipleBuild && Game1.netWorldState.Value.Builders.ContainsKey(npc))
+            {
+                Game1.drawObjectDialogue($"{npc} is busy at the moment.");
+                return;
+            }
             SavePosition();
             Game1.currentLocation.ShowConstructOptions(npc);
         }
@@ -178,5 +183,6 @@ namespace ShopAnywhere
     {
         public SButton Keybind { get; set; } = SButton.Q;
         public bool EnableKeybind { get; set; } = false;
+        public bool AllowMultipleBuild { get; set; } = true;
     }
 }

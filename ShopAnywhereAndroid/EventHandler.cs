@@ -166,6 +166,13 @@ namespace ShopAnywhere
                 getValue: () => config.EnableKeybind,
                 setValue: value => config.EnableKeybind = value
             );
+
+            configMenu.AddBoolOption(
+                mod: Shop.ModManifest,
+                name: () => "Allow Multiple Build",
+                getValue: () => config.AllowMultipleBuild,
+                setValue: value => config.AllowMultipleBuild = value
+            );
         }
         private void CabinDemolishFix(object sender, SaveLoadedEventArgs e)
         {
