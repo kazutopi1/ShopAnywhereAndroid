@@ -1,9 +1,7 @@
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Menus;
-using StardewValley.Mobile;
 using StardewModdingAPI;
-using StardewModdingAPI.Events;
 using Microsoft.Xna.Framework;
 using System;
 using HarmonyLib;
