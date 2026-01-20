@@ -29,7 +29,7 @@ namespace ShopAnywhere
             helper.Events.Display.MenuChanged += this.FlagReset;
             helper.Events.Input.ButtonReleased += this.OpenMain_Key;
             helper.Events.Input.ButtonReleased += this.OnTap;
-            helper.Events.GameLoop.UpdateTicking += this.ActionButtonPressed;
+            helper.Events.GameLoop.UpdateTicking += this.ButtonBPressed;
 
             Monitor.Log($"Keybind set to {config.Keybind}", LogLevel.Trace);
         }
@@ -223,18 +223,20 @@ namespace ShopAnywhere
                 }
             }
         }
-        private void ActionButtonPressed(object s, UpdateTickingEventArgs e)
+        private void ButtonBPressed(object s, UpdateTickingEventArgs e)
         {
             if (!Context.IsWorldReady || !Context.IsPlayerFree) { return; }
 
+            var keyState = Game1.currentLocation.tapToMove.mobileKeyStates;
+
             if (Game1.player.CurrentItem?.QualifiedItemId == KTShop)
             {
-                if (Game1.currentLocation.tapToMove.mobileKeyStates.actionButtonPressed && !wasBTapped)
+                if (!wasBTapped && keyState.actionButtonPressed)
                 {
                     Shop.Categories();
-                    wasBTapped = Game1.currentLocation.tapToMove.mobileKeyStates.actionButtonPressed;
+                    wasBTapped = true;
                 }
-                else
+                else if (!keyState.actionButtonPressed)
                 {
                     wasBTapped = false;
                 }
