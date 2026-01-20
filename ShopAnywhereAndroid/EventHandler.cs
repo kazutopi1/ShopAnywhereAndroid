@@ -23,7 +23,7 @@ namespace ShopAnywhere
             this.helper = helper;
             this.config = config;
 
-            helper.Events.GameLoop.GameLaunched += this.QuestionDialogueCache;
+            helper.Events.GameLoop.SaveLoaded += this.InitializeQuestionDialogue;
             helper.Events.GameLoop.GameLaunched += this.InitializeConfig;
             helper.Events.GameLoop.SaveLoaded += this.CabinDemolishFix;
             helper.Events.Display.MenuChanged += this.FlagReset;
@@ -33,7 +33,7 @@ namespace ShopAnywhere
 
             Monitor.Log($"Keybind set to {config.Keybind}", LogLevel.Trace);
         }
-        public void QuestionDialogueCache(object sender, GameLaunchedEventArgs e)
+        public void InitializeQuestionDialogue(object sender, SaveLoadedEventArgs e)
         {
             categories = new Response[]
             {
