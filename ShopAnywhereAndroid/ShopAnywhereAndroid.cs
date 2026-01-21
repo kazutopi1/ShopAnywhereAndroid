@@ -176,6 +176,14 @@ namespace ShopAnywhere
             }
             else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.qiGemShop")); }
         }
+        public void HatMouseShop()
+        {
+            if (Game1.player.hasOrWillReceiveMail("hatter"))
+            {
+                Utility.TryOpenShopMenu(Game1.shop_hatMouse, null, false);
+            }
+            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.hatMouse")); }
+        }
     }
     internal class Config
     {

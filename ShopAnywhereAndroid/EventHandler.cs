@@ -135,6 +135,7 @@ namespace ShopAnywhere
                 new Response("dwarf", helper.Translation.Get("shop.dwarf")),
                 new Response("krobus", helper.Translation.Get("shop.krobus")),
                 new Response("qiGem", helper.Translation.Get("shop.qiGem")),
+                new Response("hatMouse", helper.Translation.Get("shop.hatMouse")),
                 new Response("return", helper.Translation.Get("option.return"))
             };
             othLogic = (Farmer who, string othAnswers) =>
@@ -145,6 +146,7 @@ namespace ShopAnywhere
                     case "dwarf": Shop.DwarfShop(); break;
                     case "krobus": Shop.KrobusShop(); break;
                     case "qiGem": Shop.QiGemShop(); break;
+                    case "hatMouse": Shop.HatMouseShop(); break;
                     case "return": DelayedAction.functionAfterDelay(Shop.Categories, Delay); break;
                 }
             };
