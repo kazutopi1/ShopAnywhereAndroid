@@ -1,10 +1,12 @@
 using StardewValley;
-using StardewValley.Buildings;
 using StardewValley.Menus;
+using StardewValley.Buildings;
+using StardewValley.Locations;
 using StardewModdingAPI;
 using HarmonyLib;
-using System;
 using Microsoft.Xna.Framework;
+using xTile.Dimensions;
+using System;
 
 namespace ShopAnywhere
 {
@@ -18,106 +20,194 @@ namespace ShopAnywhere
             _monitor = Monitor;
             _helper = helper;
 
-            var skipCallback = new HarmonyMethod(typeof(HarmonyPatches), nameof(HarmonyPatches.SkipCallback));
-            try
-            {
-                harmony.Patch(
-                    original: AccessTools.Method(typeof(CarpenterMenu), nameof(CarpenterMenu.returnToCarpentryMenu)),
-                    prefix: skipCallback
-                );
-                harmony.Patch(
-                    original: AccessTools.Method(typeof(CarpenterMenu), nameof(CarpenterMenu.returnToCarpentryMenuAfterSuccessfulBuild)),
-                    prefix: skipCallback
-                );
-                harmony.Patch(
-                    original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnAfterPurchasingAnimal)),
-                    prefix: skipCallback
-                );
-                harmony.Patch(
-                    original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnToShopMenu)),
-                    prefix: skipCallback
-                );
-                Monitor.Log("Methods succesfully patched", LogLevel.Trace);
-            }
-            catch (Exception ex)
-            {
-                Monitor.Log($"Failed to patch methods: {ex.ToString()}", LogLevel.Error);
-            }
+            harmony.Patch(
+                original: AccessTools.Method(typeof(CarpenterMenu), nameof(CarpenterMenu.returnToCarpentryMenu)),
+                prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(HarmonyPatches.Skip_returnToCarpentryMenu))
+            );
+            harmony.Patch(
+                original: AccessTools.Method(typeof(CarpenterMenu), nameof(CarpenterMenu.returnToCarpentryMenuAfterSuccessfulBuild)),
+                prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(HarmonyPatches.Skip_returnToCarpentryMenuAfterSuccessfulBuild))
+            );
+            harmony.Patch(
+                original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnToShopMenu)),
+                prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(HarmonyPatches.Skip_setUpForReturnToShopMenu))
+            );
+            harmony.Patch(
+                original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnAfterPurchasingAnimal)),
+                prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(HarmonyPatches.Skip_setUpForReturnAfterPurchasingAnimal))
+            );
         }
-        public static bool SkipCallback(object __instance)
+        public static bool Skip_returnToCarpentryMenu(CarpenterMenu __instance)
         {
             if (!Shop.Instance.canSkip) { return true; }
 
             try
             {
-                Shop.Instance.canSkip = false;
-                foreach (GameLocation location in Game1.locations)
+                _helper.Reflection.GetField<bool>(__instance, "freeze").SetValue(true);
+                _helper.Reflection.GetField<Building>(__instance, "_selectedBuilding").SetValue(null);
+
+                foreach (var loc in Game1.locations)
                 {
-                    foreach (var building in location.buildings)
+                    foreach (var building in loc.buildings)
                     {
                         building.color = Color.White;
                     }
                 }
+                _helper.Reflection.GetField<bool>(__instance, "demolishing").SetValue(false);
+                _helper.Reflection.GetField<bool>(__instance, "moveButtonHeld").SetValue(false);
+                _helper.Reflection.GetField<bool>(__instance, "demolishButtonHeld").SetValue(false);
+                _helper.Reflection.GetField<bool>(__instance, "paintButtonHeld").SetValue(false);
+
                 LocationRequest req = Game1.getLocationRequest(Shop.Instance.lastLocationName);
+
                 req.OnWarp += delegate
                 {
-                    Game1.exitActiveMenu();
-                    Game1.viewportFreeze = false;
-                    Game1.displayHUD = true;
-                    Game1.displayFarmer = true;
+                    _helper.Reflection.GetField<bool>(__instance, "onFarm").SetValue(false);
                     Game1.player.viewingLocation.Value = null;
-
-                    if (Shop.Instance.lastTilePos != null && Shop.Instance.lastLocationName != null)
+                    _helper.Reflection.GetField<bool>(__instance, "upgrading").SetValue(false);
+                    _helper.Reflection.GetField<bool>(__instance, "moving").SetValue(false);
+                    _helper.Reflection.GetField<bool>(__instance, "painting").SetValue(false);
+                    _helper.Reflection.GetField<Building>(__instance, "buildingToMove").SetValue(null);
+                    _helper.Reflection.GetField<bool>(__instance, "freeze").SetValue(false);
+                    _helper.Reflection.GetField<bool>(__instance, "demolishing").SetValue(false);
+                    _helper.Reflection.GetField<bool>(__instance, "buildButtonHeld").SetValue(false);
+                    Game1.displayHUD = true;
+                    Game1.viewportFreeze = false;
+                    Game1.viewport.Location = new Location((int)Shop.Instance.lastTilePos.Value.X, (int)Shop.Instance.lastTilePos.Value.Y);
+                    _helper.Reflection.GetField<bool>(__instance, "drawBG").SetValue(true);
+                    Game1.displayFarmer = true;
+                    if (Game1.options.SnappyMenus)
                     {
-                        Shop.Instance.lastLocationName = null;
-                        Shop.Instance.lastTilePos = null;
-                        _monitor.Log("Saved position cleared", LogLevel.Trace);
+                        __instance.populateClickableComponentList();
+                        __instance.snapToDefaultClickableComponent();
                     }
-
-                    if (__instance is CarpenterMenu carpenter)
-                    {
-                        var reflection = _helper.Reflection;
-                        reflection.GetField<bool>(carpenter, "onFarm").SetValue(false);
-                        reflection.GetField<bool>(carpenter, "upgrading").SetValue(false);
-                        reflection.GetField<bool>(carpenter, "demolishing").SetValue(false);
-                        reflection.GetField<bool>(carpenter, "moving").SetValue(false);
-                        reflection.GetField<bool>(carpenter, "painting").SetValue(false);
-                        reflection.GetField<bool>(carpenter, "freeze").SetValue(false);
-                        reflection.GetField<bool>(carpenter, "paintButtonHeld").SetValue(false);
-                        reflection.GetField<bool>(carpenter, "buildButtonHeld").SetValue(false);
-                        reflection.GetField<bool>(carpenter, "moveButtonHeld").SetValue(false);
-                        reflection.GetField<bool>(carpenter, "drawBG").SetValue(true);
-                        reflection.GetField<Building>(carpenter, "buildingToMove").SetValue(null);
-                        if (Game1.options.SnappyMenus)
-                        {
-                            carpenter.populateClickableComponentList();
-                            carpenter.snapToDefaultClickableComponent();
-                        }
-                        reflection.GetMethod(carpenter, "resetBounds").Invoke();
-                    }
-
-                    if (__instance is PurchaseAnimalsMenu animal)
-                    {
-                        var reflection = _helper.Reflection;
-                        reflection.GetField<bool>(animal, "freeze").SetValue(false);
-                        reflection.GetField<bool>(animal, "namingAnimal").SetValue(false);
-                        reflection.GetField<bool>(animal, "onFarm").SetValue(false);
-                    }
+                    _helper.Reflection.GetMethod(__instance, "resetBounds").Invoke();
                 };
-
                 Game1.warpFarmer(
                     req,
                     (int)Shop.Instance.lastTilePos.Value.X,
                     (int)Shop.Instance.lastTilePos.Value.Y,
                     Game1.player.FacingDirection
                 );
-
-                _monitor.Log("Method skipped", LogLevel.Trace);
                 return false;
             }
             catch (Exception ex)
             {
-                _monitor.LogOnce($"Failed to skip Method: {ex.ToString()}", LogLevel.Error);
+                _monitor.LogOnce($"{ex}", LogLevel.Error);
+                return true;
+            }
+        }
+        public static bool Skip_returnToCarpentryMenuAfterSuccessfulBuild(CarpenterMenu __instance)
+        {
+            if (!Shop.Instance.canSkip) { return true; }
+
+            try
+            {
+                LocationRequest req = Game1.getLocationRequest(Shop.Instance.lastLocationName);
+                req.OnWarp += delegate
+                {
+                    Game1.displayHUD = true;
+                    Game1.player.viewingLocation.Value = null;
+                    Game1.viewportFreeze = false;
+                    Game1.viewport.Location = new Location((int)Shop.Instance.lastTilePos.Value.X, (int)Shop.Instance.lastTilePos.Value.Y);
+                    _helper.Reflection.GetField<bool>(__instance, "freeze").SetValue(false);
+                    Game1.displayFarmer = true;
+                    Game1.exitActiveMenu();
+                    _helper.Reflection.GetMethod(__instance, "resetBounds").Invoke();
+                };
+                Game1.warpFarmer(
+                    req,
+                    (int)Shop.Instance.lastTilePos.Value.X,
+                    (int)Shop.Instance.lastTilePos.Value.Y,
+                    Game1.player.FacingDirection
+                );
+                _helper.Reflection.GetField<bool>(__instance, "demolishing").SetValue(false);
+                _helper.Reflection.GetField<bool>(__instance, "moveButtonHeld").SetValue(false);
+                _helper.Reflection.GetField<bool>(__instance, "demolishButtonHeld").SetValue(false);
+                _helper.Reflection.GetField<bool>(__instance, "paintButtonHeld").SetValue(false);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _monitor.LogOnce($"{ex}", LogLevel.Error);
+                return true;
+            }
+        }
+        public static bool Skip_setUpForReturnToShopMenu(PurchaseAnimalsMenu __instance)
+        {
+            if (!Shop.Instance.canSkip) { return true; }
+
+            try
+            {
+                _helper.Reflection.GetField<bool>(__instance, "freeze").SetValue(false);
+                Game1.displayFarmer = true;
+                LocationRequest req = Game1.getLocationRequest(Shop.Instance.lastLocationName);
+                req.OnWarp += delegate
+                {
+                    _helper.Reflection.GetField<bool>(__instance, "onFarm").SetValue(false);
+                    Game1.player.viewingLocation.Value = null;
+                    Game1.displayHUD = true;
+                    Game1.viewportFreeze = false;
+                    _helper.Reflection.GetField<bool>(__instance, "namingAnimal").SetValue(false);
+                    var textBox = _helper.Reflection.GetField<TextBox>(__instance, "textBox").GetValue();
+                    var e = _helper.Reflection.GetField<TextBoxEvent>(__instance, "e").GetValue();
+                    textBox.OnEnterPressed -= e;
+                    textBox.Selected = false;
+                    if (Game1.options.SnappyMenus)
+                    {
+                        __instance.snapToDefaultClickableComponent();
+                    }
+                };
+                Game1.warpFarmer(
+                    req,
+                    (int)Shop.Instance.lastTilePos.Value.X,
+                    (int)Shop.Instance.lastTilePos.Value.Y,
+                    Game1.player.FacingDirection
+                );
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _monitor.LogOnce($"{ex}", LogLevel.Error);
+                return true;
+            }
+        }
+        public static bool Skip_setUpForReturnAfterPurchasingAnimal(PurchaseAnimalsMenu __instance)
+        {
+            if (!Shop.Instance.canSkip) { return true; }
+
+            try
+            {
+                LocationRequest req = Game1.getLocationRequest(Shop.Instance.lastLocationName);
+                req.OnWarp += delegate
+                {
+                    _helper.Reflection.GetField<bool>(__instance, "onFarm").SetValue(false);
+                    Game1.player.viewingLocation.Value = null;
+                    if (__instance.okButton != null)
+                    {
+                        __instance.okButton.bounds.X = __instance.xPositionOnScreen + __instance.width + 4;
+                    }
+                    Game1.displayHUD = true;
+                    Game1.displayFarmer = true;
+                    _helper.Reflection.GetField<bool>(__instance, "freeze").SetValue(false);
+                    var textBox = _helper.Reflection.GetField<TextBox>(__instance, "textBox").GetValue();
+                    var e = _helper.Reflection.GetField<TextBoxEvent>(__instance, "e").GetValue();
+                    textBox.OnEnterPressed -= e;
+                    textBox.Selected = false;
+                    Game1.viewportFreeze = false;
+                    Game1.exitActiveMenu();
+                };
+                Game1.warpFarmer(
+                    req,
+                    (int)Shop.Instance.lastTilePos.Value.X,
+                    (int)Shop.Instance.lastTilePos.Value.Y,
+                    Game1.player.FacingDirection
+                );
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _monitor.LogOnce($"{ex}", LogLevel.Error);
                 return true;
             }
         }
