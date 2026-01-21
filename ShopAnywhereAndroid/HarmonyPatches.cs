@@ -57,9 +57,7 @@ namespace ShopAnywhere
                 _helper.Reflection.GetField<bool>(__instance, "moveButtonHeld").SetValue(false);
                 _helper.Reflection.GetField<bool>(__instance, "demolishButtonHeld").SetValue(false);
                 _helper.Reflection.GetField<bool>(__instance, "paintButtonHeld").SetValue(false);
-
                 LocationRequest req = Game1.getLocationRequest(Shop.Instance.lastLocationName);
-
                 req.OnWarp += delegate
                 {
                     _helper.Reflection.GetField<bool>(__instance, "onFarm").SetValue(false);

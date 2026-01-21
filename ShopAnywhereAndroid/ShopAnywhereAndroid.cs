@@ -108,7 +108,7 @@ namespace ShopAnywhere
         {
             if (!config.AllowMultipleBuild && Game1.netWorldState.Value.Builders.ContainsKey(npc))
             {
-                Game1.drawObjectDialogue($"{npc} is busy at the moment.");
+                Game1.drawObjectDialogue(Helper.Translation.Get("condition.robin"));
                 return;
             }
             SavePosition();

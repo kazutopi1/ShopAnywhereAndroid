@@ -162,14 +162,14 @@ namespace ShopAnywhere
 
             configMenu.AddBoolOption(
                 mod: Shop.ModManifest,
-                name: () => "Enable Keybind",
+                name: () => helper.Translation.Get("config.enableKeybind"),
                 getValue: () => config.EnableKeybind,
                 setValue: value => config.EnableKeybind = value
             );
 
             configMenu.AddBoolOption(
                 mod: Shop.ModManifest,
-                name: () => "Allow Multiple Build",
+                name: () => helper.Translation.Get("config.allowMultipleBuild"),
                 getValue: () => config.AllowMultipleBuild,
                 setValue: value => config.AllowMultipleBuild = value
             );
