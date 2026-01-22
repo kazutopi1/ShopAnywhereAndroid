@@ -15,6 +15,7 @@ namespace ShopAnywhere
         public Config config;
         public HarmonyPatches p;
         public EventHandler e;
+
         public string lastLocationName;
         public Vector2? lastTilePos;
         public bool canSkip = false;

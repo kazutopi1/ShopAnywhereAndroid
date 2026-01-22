@@ -45,6 +45,7 @@ namespace ShopAnywhere
             {
                 _helper.Reflection.GetField<bool>(__instance, "freeze").SetValue(true);
                 _helper.Reflection.GetField<Building>(__instance, "_selectedBuilding").SetValue(null);
+
                 foreach (var loc in Game1.locations)
                 {
                     foreach (var building in loc.buildings)

@@ -230,6 +230,7 @@ namespace ShopAnywhere
             if (!Context.IsWorldReady || !Context.IsPlayerFree) { return; }
 
             var keyState = Game1.currentLocation.tapToMove.mobileKeyStates;
+
             if (Game1.player.CurrentItem?.QualifiedItemId == KTShop)
             {
                 if (!wasBTapped && keyState.actionButtonPressed)
