@@ -15,7 +15,6 @@ namespace ShopAnywhere
         public StardewValley.GameLocation.afterQuestionBehavior categoriesOptionsLogic, generalLogic, combatAndMiningLogic, buildingLogic, animalsLogic, othLogic;
         public const int Delay = 50;
         public const string KTShop = "(O)kt.shop";
-        private bool wasBTapped = false;
 
         public EventHandler(Shop shop, IModHelper helper, IMonitor Monitor, Config config)
         {
@@ -29,7 +28,6 @@ namespace ShopAnywhere
             helper.Events.Display.MenuChanged += this.FlagReset;
             helper.Events.Input.ButtonReleased += this.OpenMain_Key;
             helper.Events.Input.ButtonReleased += this.OnTap;
-            helper.Events.GameLoop.UpdateTicking += this.ButtonBPressed;
 
             Monitor.Log($"Keybind set to {config.Keybind}", LogLevel.Trace);
         }
@@ -222,25 +220,6 @@ namespace ShopAnywhere
                     {
                         Shop.Categories();
                     }
-                }
-            }
-        }
-        private void ButtonBPressed(object s, UpdateTickingEventArgs e)
-        {
-            if (!Context.IsWorldReady || !Context.IsPlayerFree) { return; }
-
-            var keyState = Game1.currentLocation.tapToMove.mobileKeyStates;
-
-            if (Game1.player.CurrentItem?.QualifiedItemId == KTShop)
-            {
-                if (!wasBTapped && keyState.actionButtonPressed)
-                {
-                    Shop.Categories();
-                    wasBTapped = true;
-                }
-                else if (!keyState.actionButtonPressed)
-                {
-                    wasBTapped = false;
                 }
             }
         }

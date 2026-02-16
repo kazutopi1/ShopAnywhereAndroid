@@ -1,4 +1,5 @@
 using StardewValley;
+using StardewValley.Mobile;
 using StardewValley.Menus;
 using StardewValley.Buildings;
 using StardewValley.Locations;
@@ -14,6 +15,9 @@ namespace ShopAnywhere
     {
         private static IMonitor _monitor;
         private static IModHelper _helper;
+
+        private static bool wasBTapped = false;
+        public const string KTShop = "(O)kt.shop";
 
         public HarmonyPatches(Harmony harmony, IMonitor Monitor, IModHelper helper)
         {
@@ -35,6 +39,11 @@ namespace ShopAnywhere
             harmony.Patch(
                 original: AccessTools.Method(typeof(PurchaseAnimalsMenu), nameof(PurchaseAnimalsMenu.setUpForReturnAfterPurchasingAnimal)),
                 prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(HarmonyPatches.Skip_setUpForReturnAfterPurchasingAnimal))
+            );
+
+            harmony.Patch(
+                original: AccessTools.PropertyGetter(typeof(VirtualJoypad), nameof(VirtualJoypad.ButtonBPressed)),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(HarmonyPatches.Postfix_ButtonBPressed))
             );
         }
         public static bool Skip_returnToCarpentryMenu(CarpenterMenu __instance)
@@ -207,6 +216,21 @@ namespace ShopAnywhere
             {
                 _monitor.LogOnce($"{ex}", LogLevel.Error);
                 return true;
+            }
+        }
+        public static void Postfix_ButtonBPressed(ref bool __result)
+        {
+            try
+            {
+                if (__result && !wasBTapped && Game1.player.CurrentItem?.QualifiedItemId == KTShop)
+                {
+                    Shop.Instance.Categories();
+                }
+                wasBTapped = __result;
+            }
+            catch (Exception ex)
+            {
+                _monitor.LogOnce($"{ex}", LogLevel.Error);
             }
         }
     }
