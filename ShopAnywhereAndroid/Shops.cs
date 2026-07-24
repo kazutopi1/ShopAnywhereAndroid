@@ -1,102 +1,89 @@
 using StardewValley;
 using StardewValley.Locations;
-using StardewValley.Menus;
 using StardewModdingAPI;
 using Microsoft.Xna.Framework;
-using System;
-using HarmonyLib;
-using StardewModdingAPI.Utilities;
 
-namespace ShopAnywhere
+namespace ShopAnywhereAndroid
 {
-    internal sealed class Shop : Mod
+    public class Shops
     {
-        public static Shop Instance { get; private set; }
-        public Config config;
-        public HarmonyPatches p;
-        public EventHandler e;
+        public static Shops Instance { get; private set; }
+
+        readonly IMonitor Monitor;
+
+        readonly IModHelper Helper;
 
         public string lastLocationName;
+
         public Vector2? lastTilePos;
+
         public bool canSkip = false;
 
-        public override void Entry(IModHelper helper)
+        public const string KTShop = "(O)kt.shop";
+
+        public Shops(IModHelper helper, IMonitor monitor)
         {
             Instance = this;
 
-            this.config = helper.ReadConfig<Config>();
+            this.Helper = helper;
 
-            if (Constants.TargetPlatform != GamePlatform.Android)
-            {
-                var ex = new Exception();
-                Monitor.Log($"This mod only supports Android. {ex.ToString()}", LogLevel.Error);
-                return;
-            }
+            this.Monitor = monitor;
+        }
 
-            var harmony = new Harmony(ModManifest.UniqueID);
-            e = new EventHandler(this, helper, Monitor, config);
-            p = new HarmonyPatches(harmony, Monitor, helper);
-        }
-        public void QuestionDialogue(
-            string question,
-            Response[] answerChoices,
-            StardewValley.GameLocation.afterQuestionBehavior afterDialogueBehavior
-        )
-        {
-            Game1.currentLocation.createQuestionDialogue(
-                question: question,
-                answerChoices: answerChoices,
-                afterDialogueBehavior: afterDialogueBehavior
-            );
-        }
         public void Categories()
         {
-            QuestionDialogue(
+            Game1.currentLocation.createQuestionDialogue(
                 Helper.Translation.Get("option.categories"),
-                e.categories,
-                e.categoriesOptionsLogic
+                S_Events.Instance.categories,
+                S_Events.Instance.categoriesOptionsLogic
             );
         }
+
         public void General()
         {
-            QuestionDialogue(
+            Game1.currentLocation.createQuestionDialogue(
                 Helper.Translation.Get("option.general"),
-                e.general,
-                e.generalLogic
+                S_Events.Instance.general,
+                S_Events.Instance.generalLogic
             );
         }
+
         public void CombatAndMining()
         {
-            QuestionDialogue(
+            Game1.currentLocation.createQuestionDialogue(
                 Helper.Translation.Get("option.combat"),
-                e.combatAndMining,
-                e.combatAndMiningLogic
+                S_Events.Instance.combatAndMining,
+                S_Events.Instance.combatAndMiningLogic
             );
         }
+
         public void Building()
         {
-            QuestionDialogue(
+            Game1.currentLocation.createQuestionDialogue(
                 Helper.Translation.Get("option.building"),
-                e.building,
-                e.buildingLogic
+                S_Events.Instance.building,
+                S_Events.Instance.buildingLogic
             );
         }
+
         public void Animals()
         {
-            QuestionDialogue(
+            Game1.currentLocation.createQuestionDialogue(
                 Helper.Translation.Get("option.animals"),
-                e.animals,
-                e.animalsLogic
+                S_Events.Instance.animals,
+                S_Events.Instance.animalsLogic
             );
         }
+
         public void Others()
         {
-            QuestionDialogue(
+            Game1.currentLocation.createQuestionDialogue(
                 Helper.Translation.Get("option.others"),
-                e.oth,
-                e.othLogic
+                S_Events.Instance.oth,
+                S_Events.Instance.othLogic
             );
         }
+
         public void SavePosition()
         {
             canSkip = true;
@@ -104,9 +91,10 @@ namespace ShopAnywhere
             lastTilePos = Game1.player.Tile;
             Monitor.Log($"Position saved: {lastLocationName} {lastTilePos}", LogLevel.Trace);
         }
+
         public void BuildingMenu(string npc)
         {
-            if (!config.AllowMultipleBuild && Game1.netWorldState.Value.Builders.ContainsKey(npc))
+            if (!Config.Instance.AllowMultipleBuild && Game1.netWorldState.Value.Builders.ContainsKey(npc))
             {
                 Game1.drawObjectDialogue(Helper.Translation.Get("condition.robin"));
                 return;
@@ -114,11 +102,13 @@ namespace ShopAnywhere
             SavePosition();
             Game1.currentLocation.ShowConstructOptions(npc);
         }
+
         public void MarnieMenu()
         {
             SavePosition();
             Game1.currentLocation.ShowAnimalShopMenu();
         }
+
         public void WizardMenu(string npc)
         {
             if (Game1.player.hasMagicInk)
@@ -128,6 +118,7 @@ namespace ShopAnywhere
             }
             else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.wizard")); }
         }
+
         public void KrobusShop()
         {
             if (Game1.player.hasRustyKey)
@@ -136,6 +127,7 @@ namespace ShopAnywhere
             }
             else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.krobus")); }
         }
+
         public void DesertTrader()
         {
             if (Game1.player.hasOrWillReceiveMail("ccVault") || Game1.player.hasOrWillReceiveMail("JojaVault"))
@@ -144,6 +136,7 @@ namespace ShopAnywhere
             }
             else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.bus")); }
         }
+
         public void DwarfShop()
         {
             if (Game1.player.canUnderstandDwarves)
@@ -152,6 +145,7 @@ namespace ShopAnywhere
             }
             else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.dwarf")); }
         }
+
         public void SandyShop()
         {
             if (Game1.player.hasOrWillReceiveMail("ccVault") || Game1.player.hasOrWillReceiveMail("JojaVault"))
@@ -160,6 +154,7 @@ namespace ShopAnywhere
             }
             else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.bus")); }
         }
+
         public void TravelingCart()
         {
             if (Game1.dayOfMonth % 7 == 5 || Game1.dayOfMonth % 7 == 0)
@@ -168,6 +163,7 @@ namespace ShopAnywhere
             }
             else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.travelingCart")); }
         }
+
         public void QiGemShop()
         {
             if (IslandWest.IsQiWalnutRoomDoorUnlocked(out int walnutsFound))
@@ -176,6 +172,7 @@ namespace ShopAnywhere
             }
             else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.qiGemShop")); }
         }
+
         public void HatMouseShop()
         {
             if (Game1.player.hasOrWillReceiveMail("hatter"))
@@ -185,10 +182,15 @@ namespace ShopAnywhere
             else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.hatMouse")); }
         }
     }
-    internal class Config
+
+    public class Config
     {
+        public static Config Instance { get; set; }
+
         public SButton Keybind { get; set; } = SButton.Q;
+
         public bool EnableKeybind { get; set; } = false;
+
         public bool AllowMultipleBuild { get; set; } = true;
     }
 }

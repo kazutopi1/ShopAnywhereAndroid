@@ -3,24 +3,29 @@ using StardewValley.Locations;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 
-namespace ShopAnywhere
+namespace ShopAnywhereAndroid
 {
-    internal class EventHandler
+    public class S_Events
     {
-        private readonly Shop Shop;
-        private readonly IModHelper helper;
-        private Config config;
+        public static S_Events Instance { get; private set; }
+
+        readonly IMonitor Monitor;
+
+        readonly IModHelper helper;
 
         public Response[] categories, general, combatAndMining, building, animals, oth;
-        public StardewValley.GameLocation.afterQuestionBehavior categoriesOptionsLogic, generalLogic, combatAndMiningLogic, buildingLogic, animalsLogic, othLogic;
-        public const int Delay = 50;
-        public const string KTShop = "(O)kt.shop";
 
-        public EventHandler(Shop shop, IModHelper helper, IMonitor Monitor, Config config)
+        public StardewValley.GameLocation.afterQuestionBehavior categoriesOptionsLogic, generalLogic, combatAndMiningLogic, buildingLogic, animalsLogic, othLogic;
+
+        public const int Delay = 50;
+
+        public S_Events(IModHelper helper, IMonitor monitor)
         {
-            this.Shop = shop;
+            Instance = this;
+
             this.helper = helper;
-            this.config = config;
+
+            this.Monitor = monitor;
 
             helper.Events.GameLoop.SaveLoaded += this.InitializeQuestionDialogue;
             helper.Events.GameLoop.GameLaunched += this.InitializeConfig;
@@ -29,8 +34,9 @@ namespace ShopAnywhere
             helper.Events.Input.ButtonReleased += this.OpenMain_Key;
             helper.Events.Input.ButtonReleased += this.OnTap;
 
-            Monitor.Log($"Keybind set to {config.Keybind}", LogLevel.Trace);
+            Monitor.Log($"Keybind set to {Config.Instance.Keybind}", LogLevel.Trace);
         }
+
         public void InitializeQuestionDialogue(object sender, SaveLoadedEventArgs e)
         {
             categories = new Response[]
@@ -46,11 +52,11 @@ namespace ShopAnywhere
             {
                 switch (whichAnswer)
                 {
-                    case "General": DelayedAction.functionAfterDelay(Shop.General, Delay); break;
-                    case "CombatAndMining": DelayedAction.functionAfterDelay(Shop.CombatAndMining, Delay); break;
-                    case "Building": DelayedAction.functionAfterDelay(Shop.Building, Delay); break;
-                    case "Animals": DelayedAction.functionAfterDelay(Shop.Animals, Delay); break;
-                    case "Others": DelayedAction.functionAfterDelay(Shop.Others, Delay); break;
+                    case "General": DelayedAction.functionAfterDelay(Shops.Instance.General, Delay); break;
+                    case "CombatAndMining": DelayedAction.functionAfterDelay(Shops.Instance.CombatAndMining, Delay); break;
+                    case "Building": DelayedAction.functionAfterDelay(Shops.Instance.Building, Delay); break;
+                    case "Animals": DelayedAction.functionAfterDelay(Shops.Instance.Animals, Delay); break;
+                    case "Others": DelayedAction.functionAfterDelay(Shops.Instance.Others, Delay); break;
                 }
             };
             general = new Response[]
@@ -68,8 +74,8 @@ namespace ShopAnywhere
                     case "seedShop": Utility.TryOpenShopMenu(Game1.shop_generalStore, null, false); break;
                     case "fishShop": Utility.TryOpenShopMenu(Game1.shop_fish, null, false); break;
                     case "saloon": Utility.TryOpenShopMenu(Game1.shop_saloon, null, false); break;
-                    case "sandyShop": Shop.SandyShop(); break;
-                    case "return": DelayedAction.functionAfterDelay(Shop.Categories, Delay); break;
+                    case "sandyShop": Shops.Instance.SandyShop(); break;
+                    case "return": DelayedAction.functionAfterDelay(Shops.Instance.Categories, Delay); break;
                 }
             };
             combatAndMining = new Response[]
@@ -89,8 +95,8 @@ namespace ShopAnywhere
                     case "blacksmith": Utility.TryOpenShopMenu(Game1.shop_blacksmith, null, false); break;
                     case "toolUpgrades": Utility.TryOpenShopMenu(Game1.shop_blacksmithUpgrades, null, false); break;
                     case "crushGeodes": Game1.activeClickableMenu = new StardewValley.Menus.GeodeMenu(); break;
-                    case "desertTrader": Shop.DesertTrader(); break;
-                    case "return": DelayedAction.functionAfterDelay(Shop.Categories, Delay); break;
+                    case "desertTrader": Shops.Instance.DesertTrader(); break;
+                    case "return": DelayedAction.functionAfterDelay(Shops.Instance.Categories, Delay); break;
                 }
             };
             building = new Response[]
@@ -105,9 +111,9 @@ namespace ShopAnywhere
                 switch (buildinganswers)
                 {
                     case "carpenter": Utility.TryOpenShopMenu(Game1.shop_carpenter, null, false); break;
-                    case "buildBuildings": Shop.BuildingMenu("Robin"); break;
-                    case "wizard": Shop.WizardMenu("Wizard"); break;
-                    case "return": DelayedAction.functionAfterDelay(Shop.Categories, Delay); break;
+                    case "buildBuildings": Shops.Instance.BuildingMenu("Robin"); break;
+                    case "wizard": Shops.Instance.WizardMenu("Wizard"); break;
+                    case "return": DelayedAction.functionAfterDelay(Shops.Instance.Categories, Delay); break;
                 }
             };
             animals = new Response[]
@@ -122,9 +128,9 @@ namespace ShopAnywhere
                 switch (animalsAnswers)
                 {
                     case "supplies": Utility.TryOpenShopMenu(Game1.shop_animalSupplies, null, false); break;
-                    case "animalShop": Shop.MarnieMenu(); break;
+                    case "animalShop": Shops.Instance.MarnieMenu(); break;
                     case "adoptPet": Utility.TryOpenShopMenu(Game1.shop_petAdoption, null, false); break;
-                    case "return": DelayedAction.functionAfterDelay(Shop.Categories, Delay); break;
+                    case "return": DelayedAction.functionAfterDelay(Shops.Instance.Categories, Delay); break;
                 }
             };
             oth = new Response[]
@@ -140,40 +146,42 @@ namespace ShopAnywhere
             {
                 switch (othAnswers)
                 {
-                    case "wanderingTrader": Shop.TravelingCart(); break;
-                    case "dwarf": Shop.DwarfShop(); break;
-                    case "krobus": Shop.KrobusShop(); break;
-                    case "qiGem": Shop.QiGemShop(); break;
-                    case "hatMouse": Shop.HatMouseShop(); break;
-                    case "return": DelayedAction.functionAfterDelay(Shop.Categories, Delay); break;
+                    case "wanderingTrader": Shops.Instance.TravelingCart(); break;
+                    case "dwarf": Shops.Instance.DwarfShop(); break;
+                    case "krobus": Shops.Instance.KrobusShop(); break;
+                    case "qiGem": Shops.Instance.QiGemShop(); break;
+                    case "hatMouse": Shops.Instance.HatMouseShop(); break;
+                    case "return": DelayedAction.functionAfterDelay(Shops.Instance.Categories, Delay); break;
                 }
             };
         }
+
         public void InitializeConfig(object sender, GameLaunchedEventArgs e)
         {
             var configMenu = helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
             if (configMenu is null) { return; }
 
             configMenu.Register(
-                mod: Shop.ModManifest,
-                reset: () => config = new Config(),
-                save: () => helper.WriteConfig(config)
+                mod: ModEntry.Instance.ModManifest,
+                reset: () => Config.Instance = new Config(),
+                save: () => helper.WriteConfig(Config.Instance)
             );
 
             configMenu.AddBoolOption(
-                mod: Shop.ModManifest,
+                mod: ModEntry.Instance.ModManifest,
                 name: () => helper.Translation.Get("config.enableKeybind"),
-                getValue: () => config.EnableKeybind,
-                setValue: value => config.EnableKeybind = value
+                getValue: () => Config.Instance.EnableKeybind,
+                setValue: value => Config.Instance.EnableKeybind = value
             );
 
             configMenu.AddBoolOption(
-                mod: Shop.ModManifest,
+                mod: ModEntry.Instance.ModManifest,
                 name: () => helper.Translation.Get("config.allowMultipleBuild"),
-                getValue: () => config.AllowMultipleBuild,
-                setValue: value => config.AllowMultipleBuild = value
+                getValue: () => Config.Instance.AllowMultipleBuild,
+                setValue: value => Config.Instance.AllowMultipleBuild = value
             );
         }
+
         private void CabinDemolishFix(object sender, SaveLoadedEventArgs e)
         {
             foreach (GameLocation location in Game1.locations)
@@ -190,35 +198,38 @@ namespace ShopAnywhere
                 }
             }
         }
+
         private void FlagReset(object sender, MenuChangedEventArgs e)
         {
-            if (e.NewMenu == null && Shop.canSkip)
+            if (e.NewMenu == null && Shops.Instance.canSkip)
             {
-                Shop.canSkip = false;
+                Shops.Instance.canSkip = false;
             }
         }
+
         private void OpenMain_Key(object sender, ButtonReleasedEventArgs e)
         {
-            if (!config.EnableKeybind) { return; }
+            if (!Config.Instance.EnableKeybind) { return; }
 
-            if (!Context.IsWorldReady || !Context.IsPlayerFree) { return; }
+            if (!Context.IsWorldReady || !Context.IsPlayerFree || Game1.player.IsBusyDoingSomething()) { return; }
 
-            if (e.Button == config.Keybind)
+            if (e.Button == Config.Instance.Keybind)
             {
-                Shop.Categories();
+                Shops.Instance.Categories();
             }
         }
+
         public void OnTap(object s, ButtonReleasedEventArgs e)
         {
-            if (!Context.IsPlayerFree || !Context.IsWorldReady) { return; }
+            if (!Context.IsPlayerFree || !Context.IsWorldReady || Game1.player.IsBusyDoingSomething()) { return; }
 
-            if (Game1.player.CurrentItem?.QualifiedItemId == KTShop)
+            if (Game1.player.CurrentItem?.QualifiedItemId == Shops.KTShop)
             {
                 if (e.Button == SButton.MouseLeft && e.Cursor.Tile == Game1.player.getTileLocation())
                 {
                     if (Game1.options.weaponControl == 0 || Game1.options.weaponControl == 1)
                     {
-                        Shop.Categories();
+                        Shops.Instance.Categories();
                     }
                 }
             }
