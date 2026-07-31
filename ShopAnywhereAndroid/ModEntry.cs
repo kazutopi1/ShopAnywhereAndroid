@@ -1,6 +1,5 @@
-using StardewModdingAPI;
+﻿using StardewModdingAPI;
 using HarmonyLib;
-using ShopAnywhereAndroid;
 
 namespace ShopAnywhereAndroid
 {
@@ -22,9 +21,9 @@ namespace ShopAnywhereAndroid
 
             Harmony harmony = new Harmony(this.ModManifest.UniqueID);
 
-            new H_Patches(harmony, helper, Monitor);
+            ModHarmonyPatches.ApplyPatch(harmony);
 
-            new S_Events(helper, Monitor);
+            new ModEventHandler(helper, Monitor);
 
             new Shops(helper, Monitor);
         }

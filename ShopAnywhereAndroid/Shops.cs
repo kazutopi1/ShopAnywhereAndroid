@@ -1,4 +1,6 @@
-using StardewValley;
+﻿using StardewValley;
+using StardewValley.Tools;
+using StardewValley.Menus;
 using StardewValley.Locations;
 using StardewModdingAPI;
 using Microsoft.Xna.Framework;
@@ -8,88 +10,36 @@ namespace ShopAnywhereAndroid
     public class Shops
     {
         public static Shops Instance { get; private set; }
-
         readonly IMonitor Monitor;
-
         readonly IModHelper Helper;
-
-        public string lastLocationName;
-
-        public Vector2? lastTilePos;
-
+        public string savedLocationName;
+        public Vector2? savedTilePosition;
         public bool canSkip = false;
-
+        public bool canSkipDialogue = false;
         public const string KTShop = "(O)kt.shop";
 
         public Shops(IModHelper helper, IMonitor monitor)
         {
             Instance = this;
-
             this.Helper = helper;
-
             this.Monitor = monitor;
-        }
-
-        public void Categories()
-        {
-            Game1.currentLocation.createQuestionDialogue(
-                Helper.Translation.Get("option.categories"),
-                S_Events.Instance.categories,
-                S_Events.Instance.categoriesOptionsLogic
-            );
-        }
-
-        public void General()
-        {
-            Game1.currentLocation.createQuestionDialogue(
-                Helper.Translation.Get("option.general"),
-                S_Events.Instance.general,
-                S_Events.Instance.generalLogic
-            );
-        }
-
-        public void CombatAndMining()
-        {
-            Game1.currentLocation.createQuestionDialogue(
-                Helper.Translation.Get("option.combat"),
-                S_Events.Instance.combatAndMining,
-                S_Events.Instance.combatAndMiningLogic
-            );
-        }
-
-        public void Building()
-        {
-            Game1.currentLocation.createQuestionDialogue(
-                Helper.Translation.Get("option.building"),
-                S_Events.Instance.building,
-                S_Events.Instance.buildingLogic
-            );
-        }
-
-        public void Animals()
-        {
-            Game1.currentLocation.createQuestionDialogue(
-                Helper.Translation.Get("option.animals"),
-                S_Events.Instance.animals,
-                S_Events.Instance.animalsLogic
-            );
-        }
-
-        public void Others()
-        {
-            Game1.currentLocation.createQuestionDialogue(
-                Helper.Translation.Get("option.others"),
-                S_Events.Instance.oth,
-                S_Events.Instance.othLogic
-            );
         }
 
         public void SavePosition()
         {
             canSkip = true;
-            lastLocationName = Game1.currentLocation.NameOrUniqueName;
-            lastTilePos = Game1.player.Tile;
-            Monitor.Log($"Position saved: {lastLocationName} {lastTilePos}", LogLevel.Trace);
+            canSkipDialogue = true;
+            savedLocationName = Game1.currentLocation.NameOrUniqueName;
+            savedTilePosition = Game1.player.Tile;
+        }
+
+        public void StopDialogue(DialogueBox d)
+        {
+            d.exitThisMenu();
+            Game1.dialogueUp = false;
+            Game1.currentSpeaker = null;
+            Game1.player.forceCanMove();
+            canSkipDialogue = false;
         }
 
         public void BuildingMenu(string npc)
@@ -111,86 +61,57 @@ namespace ShopAnywhereAndroid
 
         public void WizardMenu(string npc)
         {
-            if (Game1.player.hasMagicInk)
-            {
-                SavePosition();
-                Game1.currentLocation.ShowConstructOptions(npc);
-            }
-            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.wizard")); }
+            SavePosition();
+            Game1.currentLocation.ShowConstructOptions(npc);
         }
 
-        public void KrobusShop()
+        public void ItemRecoveryShop()
         {
-            if (Game1.player.hasRustyKey)
-            {
-                Utility.TryOpenShopMenu(Game1.shop_krobus, null, false);
-            }
-            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.krobus")); }
+            Utility.TryOpenShopMenu(Game1.shop_adventurersGuildItemRecovery, null, false);
+            canSkipDialogue = true;
         }
-
-        public void DesertTrader()
+        public void ToolUpgradeShop()
         {
-            if (Game1.player.hasOrWillReceiveMail("ccVault") || Game1.player.hasOrWillReceiveMail("JojaVault"))
-            {
-                Utility.TryOpenShopMenu(Game1.shop_desertTrader, null, false);
-            }
-            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.bus")); }
-        }
+            var tool = Game1.player.toolBeingUpgraded;
+            var timeLeft = Game1.player.daysLeftForToolUpgrade;
 
-        public void DwarfShop()
-        {
-            if (Game1.player.canUnderstandDwarves)
+            if (tool.Value == null)
             {
-                Utility.TryOpenShopMenu(Game1.shop_dwarf, null, false);
+                Utility.TryOpenShopMenu(Game1.shop_blacksmithUpgrades, null, false);
+                canSkipDialogue = true;
             }
-            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.dwarf")); }
-        }
+            else if (tool.Value != null && timeLeft.Value <= 0)
+            {
+                if (!Game1.player.isInventoryFull())
+                {
+                    Tool value = tool.Value;
+                    tool.Value = null;
+                    Game1.player.hasReceivedToolUpgradeMessageYet = false;
+                    Game1.player.holdUpItemThenMessage(value);
 
-        public void SandyShop()
-        {
-            if (Game1.player.hasOrWillReceiveMail("ccVault") || Game1.player.hasOrWillReceiveMail("JojaVault"))
-            {
-                Utility.TryOpenShopMenu(Game1.shop_sandy, null, false);
-            }
-            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.bus")); }
-        }
+                    if (value is GenericTool)
+                    {
+                        value.actionWhenClaimed();
+                    }
+                    else
+                    {
+                        Game1.player.addItemToInventoryBool(value);
+                    }
+                }
 
-        public void TravelingCart()
-        {
-            if (Game1.dayOfMonth % 7 == 5 || Game1.dayOfMonth % 7 == 0)
-            {
-                Utility.TryOpenShopMenu(Game1.shop_travelingCart, null, false);
             }
-            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.travelingCart")); }
-        }
-
-        public void QiGemShop()
-        {
-            if (IslandWest.IsQiWalnutRoomDoorUnlocked(out int walnutsFound))
+            else if (tool.Value != null && timeLeft.Value >= 0)
             {
-                Utility.TryOpenShopMenu(Game1.shop_qiGemShop, null, false);
+                Game1.drawObjectDialogue($"Your {tool.Value.DisplayName} is currently being upgraded.");
             }
-            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.qiGemShop")); }
-        }
-
-        public void HatMouseShop()
-        {
-            if (Game1.player.hasOrWillReceiveMail("hatter"))
-            {
-                Utility.TryOpenShopMenu(Game1.shop_hatMouse, null, false);
-            }
-            else { Game1.drawObjectDialogue(Helper.Translation.Get("condition.hatMouse")); }
         }
     }
 
     public class Config
     {
         public static Config Instance { get; set; }
-
-        public SButton Keybind { get; set; } = SButton.Q;
-
+        public SButton Keybind { get; set; } = SButton.K;
         public bool EnableKeybind { get; set; } = false;
-
         public bool AllowMultipleBuild { get; set; } = true;
     }
 }
