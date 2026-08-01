@@ -21,7 +21,7 @@ namespace ShopAnywhereAndroid
 
             helper.Events.GameLoop.GameLaunched += this.InitializeConfig;
             helper.Events.GameLoop.SaveLoaded += this.CabinDemolishFix;
-            helper.Events.GameLoop.UpdateTicked += this.FlagResetAndOpenMenu;
+            helper.Events.GameLoop.UpdateTicked += this.FlagReset;
             helper.Events.Display.MenuChanged += this.NoDialoguePostMenu;
             helper.Events.Input.ButtonReleased += this.OpenMain_Key;
             helper.Events.Input.ButtonReleased += this.OnTap;
@@ -68,27 +68,13 @@ namespace ShopAnywhereAndroid
             }
             ShopAnywhereMenu.currentPage = 0;
         }
-        private void FlagResetAndOpenMenu(object s, UpdateTickedEventArgs e)
+        private void FlagReset(object s, UpdateTickedEventArgs e)
         {
             if (Context.IsWorldReady)
             {
                 if (Shops.Instance.canSkip && (Game1.player.IsBusyDoingSomething() || Game1.player.isMoving()) && Game1.activeClickableMenu == null)
                 {
                     Shops.Instance.canSkip = false;
-                }
-
-                var m = Game1.player.currentLocation.tapToMove.mobileKeyStates;
-                var f = Game1.player;
-                if (m.actionButtonPressed && !f.IsBusyDoingSomething())
-                {
-                    if (f.CurrentItem?.QualifiedItemId == Shops.KTShop)
-                    {
-                        Game1.activeClickableMenu = new ShopAnywhereMenu();
-                        if (f.IsBusyDoingSomething())
-                        {
-                            m.actionButtonPressed = false;
-                        }
-                    }
                 }
             }
         }
