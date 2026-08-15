@@ -24,7 +24,7 @@ namespace ShopAnywhereAndroid
             );
             harmony.Patch(
                 original: AccessTools.Method(typeof(Game1), nameof(Game1.pressActionButton)),
-                postfix: new HarmonyMethod(typeof(ModHarmonyPatches), nameof(ModHarmonyPatches.pressActionButton_postfix))
+                postfix: new HarmonyMethod(typeof(ModHarmonyPatches), nameof(ModHarmonyPatches.pressActionButton_Postfix))
             );
         }
         public static void WarpFarmer_prefix(ref LocationRequest locationRequest, ref int tileX, ref int tileY, ref int facingDirectionAfterWarp)
@@ -58,7 +58,7 @@ namespace ShopAnywhereAndroid
                 ModEntry.Instance.Monitor.LogOnce($"{ex}", LogLevel.Error);
             }
         }
-        public static void pressActionButton_postfix(ref bool __result)
+        public static void pressActionButton_Postfix(ref bool __result)
         {
             try
             {
@@ -69,6 +69,7 @@ namespace ShopAnywhereAndroid
                         if (!Game1.player.IsBusyDoingSomething())
                         {
                             Game1.activeClickableMenu = new ShopAnywhereMenu();
+                            __result = false;
                         }
                     }
                 }

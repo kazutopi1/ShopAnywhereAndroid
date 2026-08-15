@@ -21,10 +21,8 @@ namespace ShopAnywhereAndroid
 
             helper.Events.GameLoop.GameLaunched += this.InitializeConfig;
             helper.Events.GameLoop.SaveLoaded += this.CabinDemolishFix;
-            helper.Events.GameLoop.UpdateTicked += this.FlagReset;
-            helper.Events.Display.MenuChanged += this.NoDialoguePostMenu;
-            helper.Events.Input.ButtonReleased += this.OpenMain_Key;
-            helper.Events.Input.ButtonReleased += this.OnTap;
+            helper.Events.Display.MenuChanged += this.OnMenuChanged;
+            helper.Events.Input.ButtonReleased += this.OnButtonReleased;
         }
         public void InitializeConfig(object s, GameLaunchedEventArgs e)
         {
@@ -68,62 +66,56 @@ namespace ShopAnywhereAndroid
             }
             ShopAnywhereMenu.currentPage = 0;
         }
-        private void FlagReset(object s, UpdateTickedEventArgs e)
+        private void OnMenuChanged(object s, MenuChangedEventArgs e)
         {
             if (Context.IsWorldReady)
             {
-                if (Shops.Instance.canSkip && (Game1.player.IsBusyDoingSomething() || Game1.player.isMoving()) && Game1.activeClickableMenu == null)
+                if (Shops.Instance.canSkipDialogue)
+                {
+                    if (e.OldMenu is ShopMenu shopMenu)
+                    {
+                        if (shopMenu.ShopId == Game1.shop_blacksmithUpgrades)
+                        {
+                            if (e.NewMenu is DialogueBox d)
+                            {
+                                Shops.Instance.StopDialogue(d);
+                            }
+                        }
+                        if (shopMenu.ShopId == Game1.shop_adventurersGuildItemRecovery)
+                        {
+                            if (e.NewMenu is DialogueBox d)
+                            {
+                                Shops.Instance.StopDialogue(d);
+                            }
+                        }
+                    }
+
+                    if (e.OldMenu is CarpenterMenu c || e.OldMenu is PurchaseAnimalsMenu p)
+                    {
+                        if (e.NewMenu is DialogueBox d)
+                        {
+                            Shops.Instance.StopDialogue(d);
+                        }
+                    }
+                }
+                if (Shops.Instance.canSkip && Game1.activeClickableMenu == null)
                 {
                     Shops.Instance.canSkip = false;
                 }
             }
         }
-        private void NoDialoguePostMenu(object s, MenuChangedEventArgs e)
+        private void OnButtonReleased(object s, ButtonReleasedEventArgs e)
         {
-            if (Shops.Instance.canSkipDialogue)
-            {
-                if (e.OldMenu is ShopMenu shopMenu)
-                {
-                    if (shopMenu.ShopId == Game1.shop_blacksmithUpgrades)
-                    {
-                        if (e.NewMenu is DialogueBox d)
-                        {
-                            Shops.Instance.StopDialogue(d);
-                        }
-                    }
-                    if (shopMenu.ShopId == Game1.shop_adventurersGuildItemRecovery)
-                    {
-                        if (e.NewMenu is DialogueBox d)
-                        {
-                            Shops.Instance.StopDialogue(d);
-                        }
-                    }
-                }
-
-                if (e.OldMenu is CarpenterMenu c || e.OldMenu is PurchaseAnimalsMenu p)
-                {
-                    if (e.NewMenu is DialogueBox d)
-                    {
-                        Shops.Instance.StopDialogue(d);
-                    }
-                }
-            }
-        }
-        private void OpenMain_Key(object s, ButtonReleasedEventArgs e)
-        {
-            if (!Config.Instance.EnableKeybind) { return; }
-
             if (!Context.IsWorldReady || !Context.IsPlayerFree || Game1.player.IsBusyDoingSomething()) { return; }
 
-            if (e.Button == Config.Instance.Keybind)
+            if (Config.Instance.EnableKeybind)
             {
-                Game1.activeClickableMenu = new ShopAnywhereMenu();
+                if (e.Button == Config.Instance.Keybind)
+                {
+                    Game1.activeClickableMenu = new ShopAnywhereMenu();
+                    return;
+                }
             }
-        }
-
-        private void OnTap(object s, ButtonReleasedEventArgs e)
-        {
-            if (!Context.IsPlayerFree || !Context.IsWorldReady || Game1.player.IsBusyDoingSomething()) { return; }
 
             if (Game1.player.CurrentItem?.QualifiedItemId == Shops.KTShop)
             {
